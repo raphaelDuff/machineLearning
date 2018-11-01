@@ -1,7 +1,7 @@
 ---
-title: "IA COM R"
+title: "FIAP-04IA | Inteligência artificial com R"
 author: "Raphael Prates"
-date: "16 de outubro de 2018"
+date: "1 de novembro de 2018"
 output: html_document
 ---
 
@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 # 1. Kaggle Kernel Analysis: NYC Taxi EDA
-```{r, echo=FALSE,out.width='100%', fig.align='center', fig.cap='...'}
+```{r, echo=FALSE,out.width='100%', fig.align='center'}
 knitr::include_graphics('images/New-York-Taxi.jpg')
 ```
   
@@ -18,7 +18,8 @@ __Link:__ https://www.kaggle.com/headsortails/nyc-taxi-eda-update-the-fast-the-c
 
 ## 1.1 Introduction
 In this project we are going to explore the kernel above showing why the author choose the functions used, comparing to others alternatives and we are going to emphasize the interesting points of the kernel.
-
+  
+  
 ## 1.2 Load data
   
 ### Original code
@@ -32,8 +33,8 @@ train <- as.tibble(fread('train.csv'))
 ### Comparison with others alternatives
 In R, __read.csv__ is part of the regular functions and is used for load data.frame from a _csv_ file. But when we're dealing with a huge data.frame this function can take a long time to run.  
 So in this part the author used a function called __fread__ that performs much faster than _read.csv_ (check the time of each function using profvis!!).  
-After that other function came in mind mind: __load__.
-This function is used to load variable that have been stored in a _.RData_ file and runs very fast comparing with _read.csv_ and _fread_.  
+After that other function should be compared: __load__.
+This function is used to load variables that have been stored in a _.RData_ file and runs very fast comparing with _read.csv_ and _fread_.  
 When is a good ideia to use _load_?
 When it's possible to use a background process to update the data.frame and save it in _.RData_ file.  
 Let's take a look at the three possibilities:
@@ -41,12 +42,15 @@ Let's take a look at the three possibilities:
 library("profvis")
 library("data.table")
 library("tibble")
+library("readr")
 
 profvis({
   # fread
   train <- fread("train.csv")
   # read.csv
   train_readcsv <- read.csv("train.csv")
+  # read_csv -> from "readr" package
+  train_read_csv <- read_csv("train.csv")
   # fread + as.tibble
   train_tibble <- as.tibble(fread("train.csv"))
   # loading RData
@@ -56,7 +60,23 @@ profvis({
 })
 ```
   
+### __Tibbles vs data frames__
+All the information bellow was "greped" from https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html  
+__Tibbles__  
+"Tibbles are a modern take on data frames. They keep the features that have stood the test of time, and drop the features that used to be convenient but are now frustrating (i.e. converting character vectors to factors)."  
+  
+Major points:  
+
+* It never changes an input's type (i.e., no more stringsAsFactors = FALSE!);
+* It never adjusts the names of variables (i.e names with spaces will keep the whitespace. Data.frame   replaces whitespace for '.');
+* When you print a tibble, it only shows the first ten rows and all the columns that fit on one screen;
+* Tibbles are quite strict about subsetting. __[]__ always returns another tibble. Contrast this with a data frame: sometimes __[]__ returns a data frame and sometimes it just returns a vector.
+  
+  
 ## 1.3 File structure and content  
+```{r, echo=FALSE,out.width='25%', fig.align='center'}
+knitr::include_graphics('images/sheldon.gif')
+```
 A brief overview of our data can summaries the descriptive statistics values of the dataset and detect abnormal items or outliers.
 
 __For the summaries__
@@ -69,7 +89,20 @@ library("dplyr")
 glimpse(train)
 ```
 ### Comparison with others alternatives
-Often you can use the use of _str_ to make a data overview. _glimpse_ is very similar to _str_ "but it tries to show you as much data as possible".
+Another popular way to make a data overview is using _str_. It is very similar to _glimpse_ but _str_ shows less data. 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 str(train)
 ```
+### (A)uthor and (O)ur comments
+
+* vendor_id only takes the values 1 or 2, presumably to differentiate two taxi companies (A)  
+We can easily check this doing: (O)
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+levels(as.factor(train$vendor_id))
+```
+* pickup_datetime and (in the training set) dropoff_datetime are combinations of date and time that we will have to re-format into a more useful shape (A)
+* passenger_count takes a median of 1 and a maximum of 9 in both data sets (A)
+* The pickup/dropoff_longitute/latitute describes the geographical coordinates where the meter was activate/deactivated (A)
+* store_and_fwd_flag is a flag that indicates whether the trip data was sent immediately to the vendor ("N") or held in the memory of the taxi because there was no connection to the server ("Y"). Maybe there could be a correlation with certain geographical areas with bad reception? (A)
+* trip_duration: our target feature in the training data is measured in seconds.
+
