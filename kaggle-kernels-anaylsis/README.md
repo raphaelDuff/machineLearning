@@ -1,6 +1,6 @@
 # Kaggle's Kernels Analysis  
   
-This is project is from the __MBA in Artificial Intelligence__ from [__FIAP__](#https://www.fiap.com.br/).  
+This project is from the [__FIAP__](#https://www.fiap.com.br/) __MBA in Artificial Intelligence__ course.  
   
 The main purpose of this project is to learn R and Machine Learning taking a good Kernel by reference.  
 So we reproduced, compared e studied the following EDA (check the result in the _html_ file):  
