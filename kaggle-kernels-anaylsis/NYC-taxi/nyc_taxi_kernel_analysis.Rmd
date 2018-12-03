@@ -53,18 +53,14 @@ library("readr")
 
 profvis({
   # fread
-  train <- fread("train.csv")
-  test <- fread("test.csv")
+  train <- as.tibble(fread("train.csv"))
+  test <- as.tibble(fread("test.csv"))
   
   # read.csv
   train_readcsv <- read.csv("train.csv")
   
   # read_csv -> from "readr" package
   train_read_csv <- read_csv("train.csv")
-  
-  # as.tibble
-  train <- as.tibble(train)
-  test <- as.tibble(test)
   
   # loading RData
   save(train_readcsv, file = "train_data.RData")
@@ -183,7 +179,7 @@ foo <- sample_n(train, 8e3)
 ```
 Using this visualization feature we notice the majority points of our trips (Manhattan and JFK airport).  
   
-__Trip Duration__
+## __Trip Duration__
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 library(ggplot2)
 
@@ -207,6 +203,7 @@ train %>%
 ```
 Those records would correspond to 24-hour trips and beyond, with a maximum of almost 12 days. I know that rush hour can be bad, but those values are a little unbelievable.  
   
+## __Pickup and dropoff datetime__
 Over the year, the distributions of pickup_datetime and dropoff_datetime look like this: 
 mark and even a few way above it:  
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -282,9 +279,11 @@ train %>%
 
 ```
   
-## __Raised questions from pickup_datetime data visualization__  
+### __Raised questions from pickup_datetime data visualization__  
 
   __That's winter in NYC, so maybe snow storms or other heavy weather? Events like this should be taken into account, maybe through some handy external data set?__  
+  
+## _Passager count, vendor_id, store_and_fwd_flag, Day of the week and Hour of the Day_  
 In the plot above we can already see some daily and weekly modulations in the number of trips. Let's investigate these variations together with the distributions of passenger_count and vendor_id by creating a multi-plot panel with different components:  
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 p1 <- train %>%
@@ -425,3 +424,127 @@ train %>%
   head(5)
 ```
 We need to keep the existence of these (rather astonishing) values in mind so that they don't bias our analysis.
+  
+## __Most common latitudes and longitudes for dropoff/pickup__  
+__Pickup point__
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  select(pickup_longitude, pickup_latitude) %>%
+  group_by(pickup_longitude, pickup_latitude) %>%
+  count(sort = TRUE) %>%
+  summary()
+```
+__Dropoff point__
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  select(dropoff_longitude, dropoff_latitude) %>%
+  group_by(dropoff_longitude, dropoff_latitude) %>%
+  count(sort = TRUE) %>%
+  summary()
+```
+  
+## Kmeans - Getting centers for dropoff/pickup coordinates  
+"_K-Means is one of the most popular "clustering" algorithms. K-means stores k centroids that it uses to define clusters. A point is considered to be in a particular cluster if it is closer to that cluster's centroid than any other centroid.  
+K-Means finds the best centroids by alternating between (1) assigning data points to clusters based on the current centroids (2) chosing centroids (points which are the center of a cluster) based on the current assignment of data points to clusters._"    
+For more info: http://stanford.edu/~cpiech/cs221/handouts/kmeans.html  
+
+### Finding the best number of clusters for Pickup position  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library("plotly")
+
+foo <- sample_n(train, 8e3)
+quality_between_per_totss <- data.frame(
+  betweenss_per_totss = as.numeric(),
+  clusters = as.numeric(),
+  stringsAsFactors = FALSE
+  )
+
+quality_between_per_totss_vector <- c(
+  betweenss_per_totss = as.numeric(),
+  clusters = as.numeric()
+)
+
+for (cluster in 1:30) {
+  kmeans_pickup <- kmeans(foo[,c("pickup_longitude", "pickup_latitude")], centers = cluster,
+                          algorithm = "Lloyd", iter.max = 1000)
+  quality_between_per_totss_vector["betweenss_per_totss"] <- kmeans_pickup$betweenss/kmeans_pickup$totss
+  quality_between_per_totss_vector["clusters"] <- length(levels(as.factor(kmeans_pickup$cluster)))
+  quality_between_per_totss <- bind_rows(quality_between_per_totss,quality_between_per_totss_vector)
+}
+plot_ly(quality_between_per_totss,
+        x = quality_between_per_totss$clusters,
+        y = quality_between_per_totss$betweenss_per_totss) %>%
+        layout(
+          xaxis = list(title = "Number of clusters"),
+          yaxis = list(title = "Betweens/totss")
+          )
+```
+
+### Finding the best number of clusters for Dropoff position  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+quality_between_per_totss <- data.frame(
+  betweenss_per_totss = as.numeric(),
+  clusters = as.numeric(),
+  stringsAsFactors = FALSE
+  )
+
+quality_between_per_totss_vector <- c(
+  betweenss_per_totss = as.numeric(),
+  clusters = as.numeric()
+)
+
+for (cluster in 1:30) {
+  kmeans_dropoff <- kmeans(foo[,c("dropoff_longitude", "dropoff_latitude")], centers = cluster,
+                          algorithm = "Lloyd", iter.max = 1000)
+  quality_between_per_totss_vector["betweenss_per_totss"] <- kmeans_dropoff$betweenss/kmeans_dropoff$totss
+  quality_between_per_totss_vector["clusters"] <- length(levels(as.factor(kmeans_dropoff$cluster)))
+  quality_between_per_totss <- bind_rows(quality_between_per_totss,quality_between_per_totss_vector)
+}
+plot_ly(quality_between_per_totss,
+        x = quality_between_per_totss$clusters,
+        y = quality_between_per_totss$betweenss_per_totss) %>%
+        layout(
+          xaxis = list(title = "Number of clusters"),
+          yaxis = list(title = "Betweens/totss")
+          )
+```
+  
+So for this situation, __number of clusters = 10__ seems the best choice due to its position in the beginning of the stabilization of the curve.  
+
+### Find the centers of the K-Means Model  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+icons_kpickup <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = "blue"
+)
+
+icons_kdropoff <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = "orange"
+)
+
+kmeans_pickup <- kmeans(foo[,c("pickup_longitude", "pickup_latitude")], centers = 10,
+                 algorithm = "Lloyd", iter.max = 1000)
+kcenters_dataframe <- as.data.frame(kmeans_pickup$centers)
+kmeans_dropoff <- kmeans(foo[,c("dropoff_longitude", "dropoff_latitude")], centers = 10,
+                         algorithm = "Lloyd", iter.max = 1000)
+kcenters_dropoff <- as.data.frame(kmeans_dropoff$centers)
+
+leaflet(data = foo) %>% addProviderTiles(providers$Esri.WorldTopoMap) %>%
+  addAwesomeMarkers(lng = kcenters_dataframe$pickup_longitude , lat = kcenters_dataframe$pickup_latitude,
+             icon = icons_kpickup, label = "Pickup") %>%
+  addAwesomeMarkers(lng = kcenters_dropoff$dropoff_longitude , lat = kcenters_dropoff$dropoff_latitude,
+                    icon = icons_kdropoff, label = "Dropoff")
+```
+
+#__Feature relations__  
+Now it's time to examine how those features are related to each other and to our target _trip duration_.
+  
+## Pickup date/time vs _trip_duration_
+  
+* How does the variation in trip numbers throughout the day and the week affect the average trip duration?  
+* Do quieter days and hours lead to faster trips?
