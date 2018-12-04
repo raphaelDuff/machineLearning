@@ -23,6 +23,30 @@ __Link:__ https://www.kaggle.com/headsortails/nyc-taxi-eda-update-the-fast-the-c
 In this project we are going to explore the kernel above showing why the author choose the functions used, comparing to others alternatives and we are going to emphasize the interesting points of the kernel.
   
   
+## Libraries  
+```{r libraries, echo=TRUE, message=FALSE, warning=FALSE}
+library('ggplot2') # visualisation
+library('scales') # visualisation
+library('grid') # visualisation
+library('RColorBrewer') # visualisation
+library('corrplot') # visualisation
+library('alluvial') # visualisation
+library('dplyr') # data manipulation
+library('readr') # input/output
+library('data.table') # data manipulation
+library('tibble') # data wrangling
+library('tidyr') # data wrangling
+library('stringr') # string manipulation
+library('forcats') # factor manipulation
+library('lubridate') # date and time
+library('geosphere') # geospatial locations
+library('leaflet') # maps
+library('leaflet.extras') # maps
+library('maps') # maps
+library('xgboost') # modelling
+library('caret') # modelling
+library('profvis') # code execution anaylsis
+```
 ## Load data
   
 ### Original code
@@ -547,4 +571,131 @@ Now it's time to examine how those features are related to each other and to our
 ## Pickup date/time vs _trip_duration_
   
 * How does the variation in trip numbers throughout the day and the week affect the average trip duration?  
-* Do quieter days and hours lead to faster trips?
+* Do quieter days and hours lead to faster trips?  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  mutate(day_week = wday(pickup_datetime, label = TRUE)) %>%
+  group_by(day_week, vendor_id) %>% 
+  summarise(trip_duration_mean = median(trip_duration)/60) %>% 
+  ggplot(aes(day_week, trip_duration_mean, color = vendor_id)) +
+  geom_point(size = 4) +
+  labs(x = "Day of the week",y = "Median trip duration [min]")
+
+p2 <- train %>%
+  mutate(hour_day = hour(pickup_datetime)) %>% 
+  group_by(hour_day, vendor_id) %>% 
+  summarise(trip_duration_mean = median(trip_duration)/60) %>% 
+  ggplot(aes(hour_day, trip_duration_mean, color = vendor_id)) +
+  geom_smooth(method = "loess", span = 1/2) +
+  geom_point(size = 4) +
+  labs(x = "Hour of the day",y = "Median trip duration [min]") +
+  theme(legend.position = "none")
+
+layout <- matrix(c(1,2), 2,1, byrow = FALSE)
+multiplot(p1,p2, layout = layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1; p2 <- 1
+```
+  
+We find:  
+
+* There is indeed a similar pattern as for the business of the day of the week. Vendor 2, the one with the more frequent trips, also has consistently higher trip durations than vendor 1. __It will be worth adding the vendor_id feature to a model to test its predictive importance.__  
+* Over the course of a typical day we find a peak in the early afternoon and dips around 5-6am and 8pm. __The weekday and hour of a trip appear to be important features for predicting its duration and should be included in a successful model.__  
+  
+## Passenger count and Vendor vs _trip_duration_
+  
+__Are different numbers of passengers and/or the different vendors correlated with the duration of the trip?__  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  ggplot(aes(passenger_count, trip_duration, color = passenger_count)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  theme(legend.position = "none") +
+  facet_wrap(~vendor_id) +
+  labs(y = "Trip duration [s]", x = "Number of passengers")
+```
+  
+We find:  
+
+* Both vendors have short trips without any passagengers;  
+* Vendor 1 has all of the trips beyond 24 hours, whereas vendor 2 has all of the (five) trips with more than six passengers and many more trips that approach the 24-hour limit.  
+* Between 1 and 6 passengers the median trip durations are remarkably similar, in particular for vendor 2. There might be differences for vendor 1, but they are small (note the logarthmic y-axis):  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  ggplot(aes(trip_duration, fill = vendor_id)) +
+  geom_density(position = "stack") +
+  scale_x_log10()
+```
+  
+Comparing the densities of the _trip_duration_ distribution for the two vendors we find the medians are very similar, whereas the means are likely skewed by vendor 2 containing most of the long-duration outliers:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  group_by(vendor_id) %>% 
+  summarise(mean_duration = mean(trip_duration),
+            median_duration = median(trip_duration))
+```
+  
+## Store and Forward vs hour  
+The original analysis compared "Store and Forward vs _trip_duration_", but I presume that the analysis for "Store and Forward" will better performed if we consider the location (longitude and latitude) and the dropoff time (paying time) due to some areas have a weaker signal and also when the possibility of the network being congested.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  group_by(vendor_id, store_and_fwd_flag) %>%
+  count()
+```
+  
+As we can see above, Store and Forward appears only to vendor 1.  
+Does the flags Y appear with a higher frequency at a specific time of day?  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  mutate(hour_day = hour(dropoff_datetime)) %>%
+  group_by(hour_day, store_and_fwd_flag) %>%
+  count() %>% 
+  ggplot(aes(hour_day, n, color = store_and_fwd_flag)) +
+  geom_point(size = 4) +
+  scale_y_log10() +
+  labs(x = "Hour of the day",y = "No connection to the server occurrences") +
+  ggtitle("Vendor_ID 1 - Store and Forward") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+  
+Flag Y follow the distribution frequency by hour of the Flag N, so we can't determine exactly with how many occurences per hour the problem aggravates.  
+  
+## Store and Forward vs Dropoff Position  
+Let's take a look in the position of the Store_and_fwd_flag = Y to try to find a correlation:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  filter(store_and_fwd_flag == "Y") %>% 
+  leaflet() %>%
+  addProviderTiles(providers$Esri.WorldTopoMap) %>%
+  addCircleMarkers(~pickup_longitude, ~pickup_latitude, radius = 1,
+                   color = "blue", fillOpacity = 0.3)
+```
+  
+Visually the map showed no relationship between a certain area and the Store_and_flag = Y.  
+
+# Feature engineering  
+In this section we build new features from the existing ones, trying to find better predictors for our target variable.  
+The new temporal features (date,month,wday, hour) are derived from the _pickup_datetime_. We got the JFK and LA Guardia airport coordinates from Wikipedia. The _blizzard_ feature is based on the external weather data.  
+
+  
+# Data cleaning
+Before we turn to the modelling it is time to clean up our training data. We have waited to do this until now to have a more complete overview of the problematic observations. The aim here is to remove trips that have improbable features, such as extreme trip duration.  
+While there might also be a number of bogus trip durations in the test data we shouldn't be able to predict them in any case (unless there were some real correlations). By removing these training data values we will make our model more robust and more likely to generalise to unseen data, which is always our primary goal in machine learning.  
+  
+## Extreme trip durations
+
+
+
+
+
+
+
+
+
+
+
+
+
