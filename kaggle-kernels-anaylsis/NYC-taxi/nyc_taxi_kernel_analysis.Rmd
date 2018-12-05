@@ -1,6 +1,6 @@
 ---
-title: "Artificial Intelligence using R"
-author: "Team NaN | FIAP-04IA"
+title: "Kaggle Kernel Analysis: NYC Taxi EDA"
+author: "Raphael Prates"
 date: '`r Sys.Date()`'
 output: 
   html_document:
@@ -11,7 +11,6 @@ output:
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(echo = TRUE, error=FALSE)
 ```
-# Kaggle Kernel Analysis: NYC Taxi EDA
 ```{r, echo=FALSE,out.width='100%', fig.align='center'}
 knitr::include_graphics('images/New-York-Taxi.jpg')
 ```
@@ -19,9 +18,8 @@ knitr::include_graphics('images/New-York-Taxi.jpg')
 __Kernel name:__ "NYC Taxi EDA - Update: The fast & the curious"  
 __Link:__ https://www.kaggle.com/headsortails/nyc-taxi-eda-update-the-fast-the-curious
 
-## Introduction
+# Introduction
 In this project we are going to explore the kernel above showing why the author choose the functions used, comparing to others alternatives and we are going to emphasize the interesting points of the kernel.
-  
   
 ## Libraries  
 ```{r libraries, echo=TRUE, message=FALSE, warning=FALSE}
@@ -45,7 +43,7 @@ library('leaflet.extras') # maps
 library('maps') # maps
 library('xgboost') # modelling
 library('caret') # modelling
-library('profvis') # code execution anaylsis
+library('profvis') # code execution time anaylsis
 ```
 ## Load data
   
@@ -105,7 +103,6 @@ Major points:
 * When you print a tibble, it only shows the first ten rows and all the columns that fit on one screen;
 * Tibbles are quite strict about subsetting. __[ ]__ always returns another tibble. Contrast this with a data frame: sometimes __[ ]__ returns a data frame and sometimes it just returns a vector.
   
-  
 ## File structure and content  
 ```{r, echo=FALSE,out.width='25%', fig.align='center'}
 knitr::include_graphics('images/sheldon.gif')
@@ -123,11 +120,13 @@ library("dplyr")
 glimpse(train)
 glimpse(test)
 ```
+  
 ### Comparison with others alternatives
 Another popular way to make a data overview is using _str_. It is very similar to _glimpse_ but _str_ shows less data. 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 str(train)
 ```
+  
 ### First observations
 
 * vendor_id only takes the values 1 or 2, presumably to differentiate two taxi companies  
@@ -140,7 +139,7 @@ levels(as.factor(train$vendor_id))
 * The pickup/dropoff_longitute/latitute describes the geographical coordinates where the meter was activate/deactivated  
 * store_and_fwd_flag is a flag that indicates whether the trip data was sent immediately to the vendor ("N") or held in the memory of the taxi because there was no connection to the server ("Y"). Maybe there could be a correlation with certain geographical areas with bad reception?  
 * trip_duration: our target feature in the training data is measured in seconds.  
-
+  
 ## Missing values  
 To avoid an inappropriate analysis of the data, the missing values should be analysed to measure their impact in the whole dataset.  
 If the number of cases is __less than 5%__ of the sample, then the researcher __can drop them.__  
@@ -150,6 +149,7 @@ Luckly there is no missing values in data (easy mode):
 sum(is.na(train))
 sum(is.na(test))
 ```
+  
 ## __Combining train and test__  
 Here the author did an interesting move: he combined _train_ and _test_ data sets into a single one in order to avoid a closely approach that matches just one part of data.  
 __CAUTION:__ we can only combine the two data sets for a better overview but for the creation of a machine learning model we should keep _train_ and _test_ separate.  
@@ -164,6 +164,7 @@ combine <- bind_rows(train %>% mutate(dset = "train"),
 combine <- combine %>% mutate(dset = factor(dset))
 glimpse(combine)
 ```
+  
 ## Reformating features
 For our following analysis, we will turn the data and time from characters into date objects. We also recode vendor_id as a factor. This makes it easier to visualise relationships that involve these features.  
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -174,6 +175,7 @@ train <- train %>%
          vendor_id = factor(vendor_id),
          passenger_count = factor(passenger_count))
 ```
+  
 ## __Consistency check__  
 __ASSUME NOTHING!__ It is worth checking whether the trip_durations are consistent with the intervals between the pickup_datetime and dropoff_datetime. Presumably the former were directly computed from the latter, but you never know. Below, the check variable shows "TRUE" if the two intervals are not consistent:   
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -184,7 +186,8 @@ train %>%
   count()
 ```
 And we find that everything fits perfectly.  
-
+  
+  
 # __Individual feature visualizations__  
 "Visualizations of feature distributions and their relations are key to understanding a data set, and they often open up new lines of inquiry. I always recommend to examine the data from as many different perspectives as possible to notice even subtle trends and correlations."  
   
@@ -375,6 +378,7 @@ train %>%
 y_count <- table(train$store_and_fwd_flag)['Y']/sum(table(train$store_and_fwd_flag))
 paste0('Trip data stored in memory due to no connection represents ',round(y_count*100, digits = 2),'% of the values.')
 ```
+  
 ## __Time series graphics__  
 The trip volume per hour of the day depends somewhat on the month and strongly on the day of the week:  
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
@@ -468,103 +472,104 @@ train %>%
 ```
   
 ## Kmeans - Getting centers for dropoff/pickup coordinates  
-"_K-Means is one of the most popular "clustering" algorithms. K-means stores k centroids that it uses to define clusters. A point is considered to be in a particular cluster if it is closer to that cluster's centroid than any other centroid.  
-K-Means finds the best centroids by alternating between (1) assigning data points to clusters based on the current centroids (2) chosing centroids (points which are the center of a cluster) based on the current assignment of data points to clusters._"    
-For more info: http://stanford.edu/~cpiech/cs221/handouts/kmeans.html  
+<!-- "_K-Means is one of the most popular "clustering" algorithms. K-means stores k centroids that it uses to define clusters. A point is considered to be in a particular cluster if it is closer to that cluster's centroid than any other centroid.   -->
+<!-- K-Means finds the best centroids by alternating between (1) assigning data points to clusters based on the current centroids (2) chosing centroids (points which are the center of a cluster) based on the current assignment of data points to clusters._"     -->
+<!-- For more info: http://stanford.edu/~cpiech/cs221/handouts/kmeans.html   -->
 
-### Finding the best number of clusters for Pickup position  
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-library("plotly")
+<!-- ### Finding the best number of clusters for Pickup position   -->
+<!-- ```{r echo=TRUE, message=FALSE, warning=FALSE} -->
+<!-- library("plotly") -->
 
-foo <- sample_n(train, 8e3)
-quality_between_per_totss <- data.frame(
-  betweenss_per_totss = as.numeric(),
-  clusters = as.numeric(),
-  stringsAsFactors = FALSE
-  )
+<!-- foo <- sample_n(train, 8e3) -->
+<!-- quality_between_per_totss <- data.frame( -->
+<!--   betweenss_per_totss = as.numeric(), -->
+<!--   clusters = as.numeric(), -->
+<!--   stringsAsFactors = FALSE -->
+<!--   ) -->
 
-quality_between_per_totss_vector <- c(
-  betweenss_per_totss = as.numeric(),
-  clusters = as.numeric()
-)
+<!-- quality_between_per_totss_vector <- c( -->
+<!--   betweenss_per_totss = as.numeric(), -->
+<!--   clusters = as.numeric() -->
+<!-- ) -->
 
-for (cluster in 1:30) {
-  kmeans_pickup <- kmeans(foo[,c("pickup_longitude", "pickup_latitude")], centers = cluster,
-                          algorithm = "Lloyd", iter.max = 1000)
-  quality_between_per_totss_vector["betweenss_per_totss"] <- kmeans_pickup$betweenss/kmeans_pickup$totss
-  quality_between_per_totss_vector["clusters"] <- length(levels(as.factor(kmeans_pickup$cluster)))
-  quality_between_per_totss <- bind_rows(quality_between_per_totss,quality_between_per_totss_vector)
-}
-plot_ly(quality_between_per_totss,
-        x = quality_between_per_totss$clusters,
-        y = quality_between_per_totss$betweenss_per_totss) %>%
-        layout(
-          xaxis = list(title = "Number of clusters"),
-          yaxis = list(title = "Betweens/totss")
-          )
-```
+<!-- for (cluster in 1:30) { -->
+<!--   kmeans_pickup <- kmeans(foo[,c("pickup_longitude", "pickup_latitude")], centers = cluster, -->
+<!--                           algorithm = "Lloyd", iter.max = 500) -->
+<!--   quality_between_per_totss_vector["betweenss_per_totss"] <- kmeans_pickup$betweenss/kmeans_pickup$totss -->
+<!--   quality_between_per_totss_vector["clusters"] <- length(levels(as.factor(kmeans_pickup$cluster))) -->
+<!--   quality_between_per_totss <- bind_rows(quality_between_per_totss,quality_between_per_totss_vector) -->
+<!-- } -->
+<!-- plot_ly(quality_between_per_totss, -->
+<!--         x = quality_between_per_totss$clusters, -->
+<!--         y = quality_between_per_totss$betweenss_per_totss) %>% -->
+<!--         layout( -->
+<!--           xaxis = list(title = "Number of clusters"), -->
+<!--           yaxis = list(title = "Betweens/totss") -->
+<!--           ) -->
+<!-- ``` -->
 
-### Finding the best number of clusters for Dropoff position  
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-quality_between_per_totss <- data.frame(
-  betweenss_per_totss = as.numeric(),
-  clusters = as.numeric(),
-  stringsAsFactors = FALSE
-  )
+<!-- ### Finding the best number of clusters for Dropoff position   -->
+<!-- ```{r echo=TRUE, message=FALSE, warning=FALSE} -->
+<!-- quality_between_per_totss <- data.frame( -->
+<!--   betweenss_per_totss = as.numeric(), -->
+<!--   clusters = as.numeric(), -->
+<!--   stringsAsFactors = FALSE -->
+<!--   ) -->
 
-quality_between_per_totss_vector <- c(
-  betweenss_per_totss = as.numeric(),
-  clusters = as.numeric()
-)
+<!-- quality_between_per_totss_vector <- c( -->
+<!--   betweenss_per_totss = as.numeric(), -->
+<!--   clusters = as.numeric() -->
+<!-- ) -->
 
-for (cluster in 1:30) {
-  kmeans_dropoff <- kmeans(foo[,c("dropoff_longitude", "dropoff_latitude")], centers = cluster,
-                          algorithm = "Lloyd", iter.max = 1000)
-  quality_between_per_totss_vector["betweenss_per_totss"] <- kmeans_dropoff$betweenss/kmeans_dropoff$totss
-  quality_between_per_totss_vector["clusters"] <- length(levels(as.factor(kmeans_dropoff$cluster)))
-  quality_between_per_totss <- bind_rows(quality_between_per_totss,quality_between_per_totss_vector)
-}
-plot_ly(quality_between_per_totss,
-        x = quality_between_per_totss$clusters,
-        y = quality_between_per_totss$betweenss_per_totss) %>%
-        layout(
-          xaxis = list(title = "Number of clusters"),
-          yaxis = list(title = "Betweens/totss")
-          )
-```
+<!-- for (cluster in 1:30) { -->
+<!--   kmeans_dropoff <- kmeans(foo[,c("dropoff_longitude", "dropoff_latitude")], centers = cluster, -->
+<!--                           algorithm = "Lloyd", iter.max = 1000) -->
+<!--   quality_between_per_totss_vector["betweenss_per_totss"] <- kmeans_dropoff$betweenss/kmeans_dropoff$totss -->
+<!--   quality_between_per_totss_vector["clusters"] <- length(levels(as.factor(kmeans_dropoff$cluster))) -->
+<!--   quality_between_per_totss <- bind_rows(quality_between_per_totss,quality_between_per_totss_vector) -->
+<!-- } -->
+<!-- plot_ly(quality_between_per_totss, -->
+<!--         x = quality_between_per_totss$clusters, -->
+<!--         y = quality_between_per_totss$betweenss_per_totss) %>% -->
+<!--         layout( -->
+<!--           xaxis = list(title = "Number of clusters"), -->
+<!--           yaxis = list(title = "Betweens/totss") -->
+<!--           ) -->
+<!-- ``` -->
+
+<!-- So for this situation, __number of clusters = 10__ seems the best choice due to its position in the beginning of the stabilization of the curve.   -->
+
+<!-- ### Find the centers of the K-Means Model   -->
+<!-- ```{r echo=TRUE, message=FALSE, warning=FALSE} -->
+<!-- icons_kpickup <- awesomeIcons( -->
+<!--   icon = 'ios-close', -->
+<!--   iconColor = 'black', -->
+<!--   library = 'ion', -->
+<!--   markerColor = "blue" -->
+<!-- ) -->
+
+<!-- icons_kdropoff <- awesomeIcons( -->
+<!--   icon = 'ios-close', -->
+<!--   iconColor = 'black', -->
+<!--   library = 'ion', -->
+<!--   markerColor = "orange" -->
+<!-- ) -->
+
+<!-- kmeans_pickup <- kmeans(foo[,c("pickup_longitude", "pickup_latitude")], centers = 10, -->
+<!--                  algorithm = "Lloyd", iter.max = 1000) -->
+<!-- kcenters_dataframe <- as.data.frame(kmeans_pickup$centers) -->
+<!-- kmeans_dropoff <- kmeans(foo[,c("dropoff_longitude", "dropoff_latitude")], centers = 10, -->
+<!--                          algorithm = "Lloyd", iter.max = 1000) -->
+<!-- kcenters_dropoff <- as.data.frame(kmeans_dropoff$centers) -->
+
+<!-- leaflet(data = foo) %>% addProviderTiles(providers$Esri.WorldTopoMap) %>% -->
+<!--   addAwesomeMarkers(lng = kcenters_dataframe$pickup_longitude , lat = kcenters_dataframe$pickup_latitude, -->
+<!--              icon = icons_kpickup, label = "Pickup") %>% -->
+<!--   addAwesomeMarkers(lng = kcenters_dropoff$dropoff_longitude , lat = kcenters_dropoff$dropoff_latitude, -->
+<!--                     icon = icons_kdropoff, label = "Dropoff") -->
+<!-- ``` -->
   
-So for this situation, __number of clusters = 10__ seems the best choice due to its position in the beginning of the stabilization of the curve.  
-
-### Find the centers of the K-Means Model  
-```{r echo=TRUE, message=FALSE, warning=FALSE}
-icons_kpickup <- awesomeIcons(
-  icon = 'ios-close',
-  iconColor = 'black',
-  library = 'ion',
-  markerColor = "blue"
-)
-
-icons_kdropoff <- awesomeIcons(
-  icon = 'ios-close',
-  iconColor = 'black',
-  library = 'ion',
-  markerColor = "orange"
-)
-
-kmeans_pickup <- kmeans(foo[,c("pickup_longitude", "pickup_latitude")], centers = 10,
-                 algorithm = "Lloyd", iter.max = 1000)
-kcenters_dataframe <- as.data.frame(kmeans_pickup$centers)
-kmeans_dropoff <- kmeans(foo[,c("dropoff_longitude", "dropoff_latitude")], centers = 10,
-                         algorithm = "Lloyd", iter.max = 1000)
-kcenters_dropoff <- as.data.frame(kmeans_dropoff$centers)
-
-leaflet(data = foo) %>% addProviderTiles(providers$Esri.WorldTopoMap) %>%
-  addAwesomeMarkers(lng = kcenters_dataframe$pickup_longitude , lat = kcenters_dataframe$pickup_latitude,
-             icon = icons_kpickup, label = "Pickup") %>%
-  addAwesomeMarkers(lng = kcenters_dropoff$dropoff_longitude , lat = kcenters_dropoff$dropoff_latitude,
-                    icon = icons_kdropoff, label = "Dropoff")
-```
-
+  
 #__Feature relations__  
 Now it's time to examine how those features are related to each other and to our target _trip duration_.
   
@@ -675,12 +680,179 @@ train %>%
 ```
   
 Visually the map showed no relationship between a certain area and the Store_and_flag = Y.  
-
+  
 # Feature engineering  
 In this section we build new features from the existing ones, trying to find better predictors for our target variable.  
 The new temporal features (date,month,wday, hour) are derived from the _pickup_datetime_. We got the JFK and LA Guardia airport coordinates from Wikipedia. The _blizzard_ feature is based on the external weather data.  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+jfk_coord <- tibble(lon = -73.778889, lat = 40.639722)
+la_guardia_coord <- tibble(lon = -73.872611, lat = 40.77725)
 
+pick_coord <- train %>% 
+  select(pickup_longitude, pickup_latitude)
+
+drop_coord <- train %>% 
+  select(dropoff_longitude, dropoff_latitude)
+
+train$dist <- distCosine(pick_coord, drop_coord)
+train$bearing <- bearing(pick_coord, drop_coord)
+
+train$jfk_dist_pick <- distCosine(pick_coord, jfk_coord)
+train$jfk_dist_drop <- distCosine(drop_coord, jfk_coord)
+train$lg_dist_pick <- distCosine(pick_coord, la_guardia_coord)
+train$lg_dist_drop <- distCosine(drop_coord, la_guardia_coord)
+
+train <- train %>% 
+  mutate(speed = (dist/trip_duration)*3.6,
+         date = date(pickup_datetime),
+         month = month(pickup_datetime, label = TRUE),
+         wday = wday(pickup_datetime, label = TRUE),
+         wday = fct_relevel(wday,c("seg","ter", "qua", "qui", "sex", "sáb", "dom")),
+         hour = hour(pickup_datetime),
+         work = (hour %in% seq(8,18)) & (wday %in% c("seg","ter", "qua", "qui", "sex")),
+         jfk_trip = (jfk_dist_pick < 2e3) | (jfk_dist_drop < 2e3),
+         lg_trip = (lg_dist_pick < 2e3) | (lg_dist_drop < 2e3),
+         blizzard = !((date < ymd("2016-01-22") | (date > ymd("2016-01-29"))))
+  )
+```
   
+Let's take a look in the created fields:
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+glimpse(train)
+```
+  
+## Direct distance of the trip
+From the coordinates of the pickup and dropoff points we can calculate the direct distance (as the crow flies) between the two points, and compare it to our _trip_durations_. Since taxis aren't crows (in most practical scenarios), these values correspond to the minimum possible travel distance.  
+  
+To compute these distances we are using the _distCosine_ function of the __geosphere package__ for the spherical trigonometry. This method gives us the sortest distance between two points on a spheical earth. For the purpose of this localised analysis we choose to ignore ellipsoidal distortion of the earth's shape. Here are the raw values of distance vs duration (based on a down-sized sample to speed up the kernel).
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(4321)
+
+train %>% 
+  sample_n(5e4) %>% 
+  ggplot(aes(dist,trip_duration)) +
+  geom_point() +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Direct distance [m]", y = "Trip duration [s]")
+```
+  
+We find:
+
+* The distance generally increases with increasing _trip_duration_ (ooohh!! Really?! :]);
+* Here, the 24-hours trips look even more suspicious and are even more likely to be artefacts in the data;
+* In addition, there are number of trips with very short distances, down to 1 meter, but with a large range of apparent _trip_durations_.
+  
+Let's filter the data a little bit to remove the extreme (and the extremely suspicious) data points, and bin the data indo a 2-d histogram.  
+This plot shows that in log-log space the _trip_duration_ is increasing slower than linear for large distance values:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  filter(trip_duration < 3600 & trip_duration > 120) %>% 
+  filter(dist > 100 & dist < 100e3) %>% 
+  ggplot(aes(dist,trip_duration)) +
+  geom_bin2d(bins = c(500,500)) +
+  scale_x_log10() +
+  scale_y_log10() +
+  labs(x = "Direct distance [m]", y = "Trip duration [s]")
+```
+  
+## Travel Speed  
+Distance over time is of course velocity, and by computing the average apparent velocity of our taxis we will have another diagnostic to remove bogus values.
+Of course, __we won't be able to use _speed_ as a predictor for our model, since it requires knowing the travel time, but it can still be helpful in cleaning up our training data and findind other features with predictive power.__ This is the _speed_ distribution:
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  filter(speed > 2 & speed < 1e2) %>% 
+  ggplot(aes(speed)) +
+  geom_histogram(fill = "red", bins = 50) +
+  labs(x = "Average speed [km/h] (direct distance)")
+```
+  
+Well, after removing the most extreme values this looks way better than I would have expected. An average speed of around 15 km/h sounds probably reasonable for NYC. Everything above 50 km/h certainly requires magical cars (or highway travel). Also keep in mind that this refers to the direct distance and that the real velocity would have been always higher.  
+In a similar way as the average duration per day and hour we can also investigate the average speed for these time bins:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  group_by(vendor_id,wday) %>% 
+  summarise(speed_median = median(speed)) %>% 
+  ggplot(aes(wday,speed_median, color = vendor_id)) +
+  geom_point(size = 4) +
+  labs(x = "Day of the week", y = "Median speed [km/h]" )
+
+p2 <- train %>%
+  group_by(vendor_id,hour) %>% 
+  summarise(speed_median = median(speed)) %>% 
+  ggplot(aes(hour,speed_median, color = vendor_id)) +
+  geom_smooth(method = "loess", span = 1/2) +
+  geom_point(size = 4) +
+  labs(x = "Hour of the day", y = "Median speed [km/h]" )
+  theme(legend.position = "none")
+  
+p3 <- train %>% 
+  group_by(wday,hour) %>% 
+  summarise(speed_median = median(speed)) %>% 
+  ggplot(aes(hour,wday, fill = speed_median)) +
+  geom_tile() +
+  labs(x = "Hour of the day", y = "Day of the week") +
+  scale_fill_distiller(palette = "Spectral")
+
+layout <- matrix(c(1,2,3,3), 2,2, byrow = TRUE)
+multiplot(p1,p2,p3, layout = layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1; p2 <- 1; p3 <- 1
+```
+  
+We find:
+
+* Our taxis appear to be travelling faster on the weekend and on a Monday than during the rest of the week;
+* The early morning hours allow for a speedier trip, with everything from 8am to 6pm being similarly slow;
+* There are almost no differences between the two vendors;
+* The heatmap in the lower panel visualises how these trends combine to create a "low-speed-zone" in the middle of the day and week. __Based on this, we create a new feature work, which we define as 8am-6pm on seg-sáb.__
+
+## Airport distance  
+In our maps (above) and trip paths (below) we noticed that a number of trips began or ended at either of the two NYC airports: JFK and La Guardia. Since airports are usually not in the city center, it's reasonable to assume that the pickup/dropoff distance from the airport could be a useful predictor for longer _trip_durations_. Above, we defined the coordinates of the two airports and computed the corresponding distances:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  ggplot(aes(jfk_dist_pick)) +
+  geom_histogram(fill = "red", bins = 30) +
+  scale_x_log10() +
+  scale_y_sqrt() +
+  geom_vline(xintercept = 2e3) +
+  labs(x = "JFK pickup distance", y = "count" )
+
+p2 <- train %>%
+  ggplot(aes(lg_dist_pick)) +
+  geom_histogram(fill = "red", bins = 30) +
+  scale_x_log10() +
+  scale_y_sqrt() +
+  geom_vline(xintercept = 2e3) +
+  labs(x = "La Guardia pickup distance", y = "count" )
+  
+p3 <- train %>%
+  ggplot(aes(jfk_dist_drop)) +
+  geom_histogram(fill = "blue", bins = 30) +
+  scale_x_log10() +
+  scale_y_sqrt() +
+  geom_vline(xintercept = 2e3) +
+  labs(x = "JFK dropoff distance", y = "count" )
+
+p4 <- train %>%
+  ggplot(aes(lg_dist_drop)) +
+  geom_histogram(fill = "blue", bins = 30) +
+  scale_x_log10() +
+  scale_y_sqrt() +
+  geom_vline(xintercept = 2e3) +
+  labs(x = "La Guardia pickup distance", y = "count" )
+
+layout <- matrix(c(1,2,3,4), 2,2, byrow = TRUE)
+multiplot(p1,p2,p3,p4,layout = layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1; p2 <- 1; p3 <- 1; p4 <- 1
+```
+  
+Based on these numbers, we can define a JFK/La Guardia trip as having a pickup or dropoff distance of less than 2 km from the corresponding airport.  
+  
+What are the _trip_durations_ of these journeys?
 # Data cleaning
 Before we turn to the modelling it is time to clean up our training data. We have waited to do this until now to have a more complete overview of the problematic observations. The aim here is to remove trips that have improbable features, such as extreme trip duration.  
 While there might also be a number of bogus trip durations in the test data we shouldn't be able to predict them in any case (unless there were some real correlations). By removing these training data values we will make our model more robust and more likely to generalise to unseen data, which is always our primary goal in machine learning.  
