@@ -852,22 +852,173 @@ p1 <- 1; p2 <- 1; p3 <- 1; p4 <- 1
   
 Based on these numbers, we can define a JFK/La Guardia trip as having a pickup or dropoff distance of less than 2 km from the corresponding airport.  
   
-What are the _trip_durations_ of these journeys?
+What are the _trip_durations_ of these journeys?  
+  
+_trip_durations_. Above, we defined the coordinates of the two airports and computed the corresponding distances:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  filter(trip_duration < 23*3600) %>% 
+  ggplot(aes(jfk_trip, trip_duration, color = jfk_trip)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(x = "JFK trip", y = "Trip Duration" ) +
+  theme(legend.position = "none")
+
+p2 <- train %>%
+  filter(trip_duration < 23*3600) %>% 
+  ggplot(aes(lg_trip, trip_duration, color = lg_trip)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(x = "La Guardia trip", y = "Trip Duration" ) +
+  theme(legend.position = "none")
+  
+
+layout <- matrix(c(1,2), 1,2, byrow = TRUE)
+multiplot(p1,p2,layout = layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1; p2 <- 1
+```
+  
+We find that our hypothesis was correct and that trips to the airport, in particular the more distant JFK, have significantly longer average _trip_durations_. __These two features should definitely be part of our model.__  
+  
+  
 # Data cleaning
 Before we turn to the modelling it is time to clean up our training data. We have waited to do this until now to have a more complete overview of the problematic observations. The aim here is to remove trips that have improbable features, such as extreme trip duration.  
 While there might also be a number of bogus trip durations in the test data we shouldn't be able to predict them in any case (unless there were some real correlations). By removing these training data values we will make our model more robust and more likely to generalise to unseen data, which is always our primary goal in machine learning.  
   
-## Extreme trip durations
+## Extreme trip durations  
+Let's visualise the distances of the trips that took a day or longer. Unless someone took a taxi from NYC to LA, it's unlikely that those values are accurate. Here we make use of the maps package to draw an outline of Manhattan, where most of the trips begin or end. We then overlay the pickyp coordinates in red, and the dropoff coordinates in blue.  
+To further add the trip connections (direct distance) we use another handy tool from the _geosphere package; GCiNTERMEDIANTE_ allow us to interpolate the path between two sets of coordinates.
+  
+### Longer than a day  
+We start with the few trips that pretend to have taken several days to complete:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+day_plus_trips <- train %>%
+  filter(trip_duration > 24*3600)
 
+day_plus_trips %>% select(pickup_datetime, dropoff_datetime, speed)
+```
+  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+ny_map <- as.tibble(map_data("state", region = "new york:manhattan"))
 
+tpick <- day_plus_trips %>% 
+  select(lon = pickup_longitude, lat = pickup_latitude)
 
+tdrop <- day_plus_trips %>% 
+  select(lon = dropoff_longitude, lat = dropoff_latitude)
 
+p1 <- ggplot() +
+  geom_polygon(data=ny_map, aes(x=long, y=lat), fill = "grey60") +
+  geom_point(data=tpick, aes(x=lon, y=lat), size=1, color = 'red', alpha = 1) +
+  geom_point(data=tdrop, aes(x=lon, y=lat), size =1, color = 'blue', alpha = 1)
 
+for (i in seq(1,nrow(tpick))) {
+  inter <- as.tibble(gcIntermediate(tpick[i,], tdrop[i,], n=30, addStartEnd = TRUE))
+  p1 <- p1 + geom_line(data=inter,aes(x=lon, y=lat), color = 'blue', alpha = .75)
+}
 
+p1 + ggtitle("Longer than a day trips in relation to Manhattan")
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1
+```
+  
+We find nothing out of the ordinary here. While a trip to JFK can seem like an eternity if your flight is boarding soon, it's unlikely to take this long in real time. The average taxi speeds don't look very likely either.  
+  
+__Decision:__ These values should be removed from the training data set for continued exploration and modelling.  
+  
+### Close to 24 hours  
+The author don't think (so do I) it's inconceivable that someone takes a taxi for a trip that lasts almost a day (with breaks, of course). In very rare occasions this might happen; provided, of course, that the distance travelled was sufficiently long.  
+Here we define day-long trips as taking between 22 and 24 hours, which covers a small peak in our raw _trip_duration_ distribution. Those are the top 5 direct distances (in m) among the day-long trips:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+day_trips <- train %>% 
+  filter(trip_duration < 24*3600 & trip_duration > 22*3600)
 
+day_trips %>% 
+  arrange(desc(dist)) %>% 
+  select(dist, pickup_datetime, dropoff_datetime,speed) %>% 
+  head(5)
+```
+  
+The top one is about 60 km, which is not particulary far. The average speed wouldn't suggest a generous tip, either. What do these trips look like on the map?  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(2017)
 
+day_trips <- day_trips %>% 
+  sample_n(200)
 
+tpick <- day_trips %>% 
+  select(lon = pickup_longitude, lat = pickup_latitude)
 
+tdrop <- day_trips %>% 
+  select(lon = dropoff_longitude, lat = dropoff_latitude)
+
+p1 <- ggplot() +
+  geom_polygon(data=ny_map, aes(x=long, y=lat), fill = "grey60") +
+  geom_point(data=tpick, aes(x=lon, y=lat), size=1, color = 'red', alpha = 1) +
+  geom_point(data=tdrop, aes(x=lon, y=lat), size =1, color = 'blue', alpha = 1)
+
+for (i in seq(1,nrow(tpick))) {
+  inter <- as.tibble(gcIntermediate(tpick[i,], tdrop[i,], n=30, addStartEnd = TRUE))
+  p1 <- p1 + geom_line(data=inter,aes(x=lon, y=lat), color = 'blue', alpha = .255)
+}
+
+p1 + ggtitle("Day-Long trips in relation to Manhattan")
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1
+```
+  
+Here we are plotting only 200 of the about 1800 connections to keep the map reasonably readable and the script fast. Pickup points are red and dropoff points are blue.  
+  
+We find:  
+
+* A few longer distances stand out, but they are exceptions. The two major group of trips are those within Manhattan and those between Manhattan and the airports;
+* There is little to suggest that these extreme _trip_durations_ were real;
+* There is another insight here which is rather intuitive: trips to or from any of the airports (most prominently JFK) are unlikely to be very short. __Thus, the a close distance of either pickup or dropoff to the airport could be a valuable predictor for longer trip_diration.__. This is something that we took from here to the feature engineering.  
+  
+__Decision:__ We will remove _trip_durations longe than 22 hours from the exploration and possibly from the modelling.  
+  
+### Shorter than a few minutes  
+On the other side of the _trip_duration_ distribution we have those rides that appear to only have lasted for a couple of minutes. While such short trips are entirely possible, let's check their durations and speeds to make sure that they are realistic.  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+min_trips <- train %>% 
+  filter(trip_duration < 5*60)
+
+min_trips %>% 
+  arrange(dist) %>% 
+  select(dist, pickup_datetime, dropoff_datetime,speed) %>% 
+  head(5)
+```
+  
+#### Zero-distance trips  
+In doing so, we notice that there are a relatively large number of zero-distance trips:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+zero_dist <- train %>%
+  filter(near(dist,0))
+
+nrow(zero_dist)
+```
+  
+What are their nominal top durations?
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+zero_dist %>% 
+  arrange(desc(trip_duration)) %>% 
+  select(trip_duration, pickup_datetime, dropoff_datetime,vendor_id) %>% 
+  head(5)
+```
+  
+There really are a few taxis where the data wants to tell us they have not moved at all for about a day. While carrying a passenger. We choose not to believe the data in this case.  
+Once we remove the extreme cases, this is what the distribution looks like:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+zero_dist %>% 
+  filter(trip_duration < 6000) %>% 
+  ggplot(aes(trip_duration, fill = vendor_id)) +
+  geom_histogram(bins = 50) +
+  scale_x_log10()
+```
 
 
 
