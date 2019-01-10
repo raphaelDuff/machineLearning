@@ -31,6 +31,8 @@ corrgram(matcor, type = "cor", lower.panel = panel.shade, upper.panel = panel.pi
 
 Padr_Vinhos <- scale(Vinhos)
 
+#Corelação
+
 acpcor <- prcomp(Padr_Vinhos, scale = TRUE) 
 summary(acpcor)
 

@@ -15,7 +15,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Bibliotecas
+# Parte I
+
+## Bibliotecas
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 library(data.table)
 library(dplyr)
@@ -26,12 +28,12 @@ library(tibble)
 library(stringr)
 ```
 
-# Importando os dados
+## Importando os dados
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_dset <- read.csv2('BaseWine_Red_e_White2018.csv')
 ```
 
-## Identificando as variáveis
+### Identificando as variáveis
 
 Para começar nossa análise vamos identificar as variáveis para entender o que elas podem significar no contexto da composição de um vinho. 
 
@@ -65,20 +67,19 @@ str(wine_dset)
 
 "Vinho" -> *Vinho* : Os principais tipos de vinhos são Tintos e Brancos, mas há também outros tipos como vinhos roses, doces e espumantes. <BR><BR>
   
-  
-## Uma visão rápida no dataset
+### Uma visão rápida no dataset
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 glimpse(wine_dset)
 ```
   
-## Tamanho do dataset dividido pelo tipo de vinho
+### Tamanho do dataset dividido pelo tipo de vinho
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_dset %>% 
   group_by(Vinho) %>% 
   count()
 ```
   
-## Integridade dos dados por tipo de vinho
+### Integridade dos dados por tipo de vinho
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_white_dset <- 
   wine_dset %>%
@@ -94,10 +95,10 @@ sum(is.na(wine_red_dset))
 ```
   
   
-## Característica de cada tipo de vinho  
+### Característica de cada tipo de vinho  
 O vinho branco e vermelho apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
   
-### Sumário dos dados  
+#### Sumário dos dados  
   
   
 __Vinho Branco__  
@@ -111,7 +112,7 @@ __Vinho Vermelho__
 summary(wine_red_dset)
 ```
   
-#### Diferença da mediana das características  
+##### Diferença da mediana das características  
   
   
 __Medianas - Tinto dataset__
@@ -153,9 +154,8 @@ Cmedian_differenc %>%
 
 Nota: a ordem descendente dessas características será utilizada nos plots para uma melhor visualização: 
 
-#### Histogramas de cada característica  
+##### Histogramas de cada característica  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-
 plot_ly(wine_dset, y = ~totalsulfurdioxide,type = "box",
               color = ~Vinho, colors = c("red", "khaki")) %>% 
       layout(title = "Dióxido de Enxofre Total")
@@ -190,5 +190,59 @@ Notando a media de cada característica, vemos uma diferença considerável pra cad
   
 Como o número de dados pros vinhos brancos é bem maior do que o para os vermelhos (aprox. 3 vezes maior), seria interessante utilizar os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
 
+# Parte II - (Vinhos Brancos)
+
+A partir da análise acima, decidimos continuar somente com os vinhos branco por causa da quantidade e outros aspectos relevantes das váriaveis envolvidas.
+
+## Regresão Linear
+
+Indentificando os componentes principais do dataset
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+#install.packages("dplyr")
+library(dplyr)
+
+wine_dset$Vinho <- as.numeric(wine_dset$Vinho)
+
+fix(wine_dset)
+
+Padr_Vinhos <- scale(wine_dset)
+acpcor <- prcomp(Padr_Vinhos, scale = TRUE)
+
+Vinhos2 <- wine_dset %>%
+  mutate(pc1 = acpcor$x[, 1]) %>%
+  mutate(pc2 = acpcor$x[, 2]) %>%
+  mutate(pc3 = acpcor$x[, 3]) %>%
+  mutate(pc4 = acpcor$x[, 4]) 
+
+matcor <- cor(Vinhos2)
+
+#install.packages("corrplot")
+library(corrplot)
+
+corrplot::corrplot(matcor, method="circle", order="hclust")
+
+```
+
+Com base no gráfico gerado de componentes principais;
+
+Mediante nossa análise as Váriaveis dependentes são: 
+
+chlorides, volatileacidity, sulphates, freesulfurdioxide, totalsulfurdioxide, fixedacidity
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+a <- 1
+
+```
+
+Váriaveis independentes
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+b <- 2
+
+```
 
   
