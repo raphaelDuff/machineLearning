@@ -380,5 +380,11 @@ rpart.plot(modelopc3, type=2, extra="auto", under=FALSE, clip.right.labs=TRUE,
            compress=TRUE,box.palette="auto",
            snip=FALSE)
 
+Val_pred_tree2 <- predict(modelopc3,interval = "prediction", level = 0.95) 
+str(Val_pred_tree)
+
+mse_tree <- mean((vinhos_brancos$quality - Val_pred_tree2)^2)
+sqrt(mse_tree)
+
 ```
 
