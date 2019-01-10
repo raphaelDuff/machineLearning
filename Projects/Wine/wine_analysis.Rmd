@@ -1,7 +1,7 @@
 ---
 title: "Statistics - Wine"
-author: "Raphael Prates"
-date: "13 de dezembro de 2018"
+author: "IA - 04"
+date: "1 de janeiro de 2019"
 output:
   html_document:
     fig_height: 6
@@ -30,6 +30,41 @@ library(stringr)
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_dset <- read.csv2('BaseWine_Red_e_White2018.csv')
 ```
+
+## Identificando as variáveis
+
+Para começar nossa análise vamos identificar as variáveis para entender o que elas podem significar no contexto da composição de um vinho. 
+
+```{r var_vinhos}
+str(wine_dset)
+```
+<BR>
+"fixedacidity" -> *Acidex Fixa* : Acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil. <BR><BR>
+
+"volatileacidity" -> *Acidex Volátil* : É um componente do vinho que tipicamente cresce conforme o vinho envelhece e, em quando atinge um nível elevado, é responsável pelo aroma de vinagre. É o resultado da falta de cuidados durante a vinificação. <BR><BR>
+
+"citricacid" -> *Ácido Cítrico* : Nos vinhos o ácido cítrico tem pouca ou nenhuma presença. Nos vinhos tintos desaparece devido à ação de bactérias láticas (fermentação malolática). Sensorialmente é fresco, porém em alguns casos pode apresentar um leve final amargo. <BR><BR>
+
+"residualsugar" -> *Açucar Residual* : No processo de fermentação do vinho a levedura vai transformando o açúcar da uva em álcool. Por isso que, em teoria, quanto mais açúcar houver na uva, mais álcool haverá no vinho. Porem nem todo o açucar é transformado em alcool, e o açucar que resta no final do processo de fermentação é conhecido como açucar residual. <BR><BR>
+
+"chlorides" -> *Cloretos* : Os vinhos possuem em sua composição diversos produtos enológicos, sais e ácidos. Estes sais influenciam diretamente em sua qualidade. <BR><BR>
+
+"freesulfurdioxide" -> *Dioxido de Enxofre Livre* : As atividade antioxidásica do Dioxido de Enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o conseqüente escurecimento do vinho. <BR><BR>
+
+"totalsulfurdioxide" -> *Dioxido de Enxofre Total* : Dioxido de Enxofre é usado como conservante nos vinhos . <BR><BR>
+
+"density" -> *Densidade* : Define a leveza do vinhos, e pode ser caracterizado pelo tipo da uva ou por técnicas usadas na vinificação que podem ser determinantes na concentração da bebida. <BR><BR>
+
+"pH" -> *PH* : Vinhos são naturalmente ácidos, com a maioria indo de 2,8 a 4,0. Os níveis de pH estão intrinsecamente ligados ao estilo e qualidade dos vinhos. O pH relativamente baixo, na faixa de 3,1 a 3,4, parece ser pré-requisito para a produção de vinhos de alta qualidade com solidez. <BR><BR>
+
+"sulphates" -> *Sulfatos* : Os sulfitos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos. <BR><BR>
+
+"alcohol" -> *Alchool* : O teor ácido é aquele responsável por conferir a textura e sensação de frescor. O teor ácido do vinho está diretamente ligado ao tipo de uva com o qual foi produzido, e o ideal é encontrar o equilíbrio perfeito entre o açúcar e a acidez ideal na hora da colheita. <BR><BR>
+
+"quality" -> *Qualidade* : Uma infidade de aspectos influenciam na qualidade dos vinhos, desde aspectos como o nivel de oxidação, até a contaminação da rolha. <BR><BR>
+
+"Vinho" -> *Vinho* : Os principais tipos de vinhos são Tintos e Brancos, mas há também outros tipos como vinhos roses, doces e espumantes. <BR><BR>
+  
   
 ## Uma visão rápida no dataset
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -58,9 +93,9 @@ sum(is.na(wine_red_dset))
                       
 ```
   
-O vinho branco e vermelho apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
   
 ## Característica de cada tipo de vinho  
+O vinho branco e vermelho apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
   
 ### Sumário dos dados  
   
@@ -83,18 +118,6 @@ __Medianas - Tinto dataset__
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 ## fixedacidity
-
-# wine_dset %>% 
-#   ggplot(aes(fixedacidity, fill = Vinho)) +
-#   geom_boxplot()
-
-# wine_Cmedian
-
-# ou
-# > sapply(teste_matrix, median)
-
-# ou 
-# > sort(teste_matrix$ColunaB)
 
 median_red_dset <-  sapply(select(wine_red_dset, -c(Vinho, id_vinho, quality)), median)
 
@@ -131,63 +154,11 @@ Cmedian_differenc %>%
 Nota: a ordem descendente dessas características será utilizada nos plots para uma melhor visualização: 
 
 #### Histogramas de cada característica  
-  
-  
-__Multiplot function__  
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-# Define multiple plot function
-#
-# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
-# - cols:   Number of columns in layout
-# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
-#
-# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
-# then plot 1 will go in the upper left, 2 will go in the upper right, and
-# 3 will go all the way across the bottom.
-#
-
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-
-  numPlots = length(plots)
-
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                    ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-
- if (numPlots==1) {
-    print(plots[[1]])
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-
-```
-  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
 plot_ly(wine_dset, y = ~totalsulfurdioxide,type = "box",
               color = ~Vinho, colors = c("red", "khaki")) %>% 
-      layout(title = "Total sulfurdioxide")
+      layout(title = "Dióxido de Enxofre Total")
 
 ```
   
@@ -195,7 +166,7 @@ plot_ly(wine_dset, y = ~totalsulfurdioxide,type = "box",
 
 plot_ly(wine_dset, y = ~freesulfurdioxide,type = "box",
               color = ~Vinho, colors = c("red", "khaki")) %>% 
-      layout(title = "Total sulfurdioxide")
+      layout(title = "Dióxido de Enxofre Livre")
 
 ```
   
@@ -203,20 +174,21 @@ plot_ly(wine_dset, y = ~freesulfurdioxide,type = "box",
 
 plot_ly(wine_dset, y = ~residualsugar,type = "box",
               color = ~Vinho, colors = c("red", "khaki")) %>% 
-      layout(title = "Total sulfurdioxide")
+      layout(title = "Açúcar Residual")
 
 ```
   
-
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
 plot_ly(wine_dset, y = ~fixedacidity,type = "box",
               color = ~Vinho, colors = c("red", "khaki")) %>% 
-      layout(title = "Total sulfurdioxide")
+      layout(title = "Acidez Fixa")
 
 ```
 
 Notando a media de cada característica, vemos uma diferença considerável pra cada vinho (Branco ou Vermelho), portanto, vamos pegar somente um tipo de vinho para uma análise coerente.  
   
 Como o número de dados pros vinhos brancos é bem maior do que o para os vermelhos (aprox. 3 vezes maior), seria interessante utilizar os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+
+
   
