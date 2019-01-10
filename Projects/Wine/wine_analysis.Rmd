@@ -26,6 +26,8 @@ library(grid)
 library(plotly)
 library(tibble)
 library(stringr)
+library(rpart)
+library(rpart.plot)
 ```
 
 ## Importando os dados
@@ -203,14 +205,16 @@ Indentificando os componentes principais do dataset
 #install.packages("dplyr")
 library(dplyr)
 
-wine_dset$Vinho <- as.numeric(wine_dset$Vinho)
+vinhos_brancos <- wine_dset %>% filter(Vinho == 'WHITE')
 
-fix(wine_dset)
+vinhos_brancos <- vinhos_brancos[1:13]
 
-Padr_Vinhos <- scale(wine_dset)
+fix(vinhos_brancos)
+
+Padr_Vinhos <- scale(vinhos_brancos)
 acpcor <- prcomp(Padr_Vinhos, scale = TRUE)
 
-Vinhos2 <- wine_dset %>%
+Vinhos2 <- vinhos_brancos %>%
   mutate(pc1 = acpcor$x[, 1]) %>%
   mutate(pc2 = acpcor$x[, 2]) %>%
   mutate(pc3 = acpcor$x[, 3]) %>%
@@ -227,22 +231,154 @@ corrplot::corrplot(matcor, method="circle", order="hclust")
 
 Com base no gráfico gerado de componentes principais;
 
-Mediante nossa análise as Váriaveis dependentes são: 
+Podemos observar que cada componente gerado pelo componentes principais
+tem uma certa especialidade. 
 
-chlorides, volatileacidity, sulphates, freesulfurdioxide, totalsulfurdioxide, fixedacidity
+A correlação de PC1 com alcohol,residualsugar,totalsulfurdioxide e density são maiores em relação as outras variáveis.
+
+A correlação de PC2 com Ph, fixadacity são maiores em relação as outras variáveis.
+
+A correlação de PC3 com citricacid, volatileacidity e fixadacity são maiores em relação as outras variáveis.
+
+A correlação de PC4 com chlorides e sulphates são maiores em relação as outras variáveis.
+
+Mediante nossa análise dos componentes principais desse dataset, vamos utilizar os modelos PC1 e PC3, por possuirem melhor
+correlação com a variável qualidade: 
+
+
+### Escolhendo o modelo
+
+Variáveis dependentes: 
+ModeloPC1 <- (quality)
+ModeloPC3 <- (quality)
+
+Variáveis independentes:
+ModeloPC1 <- (alchool,residualsugar,totalsulfurdioxide,density)
+ModeloPC3 <- (citricacid,volatileacidity,fixedacidity)
+
+#### Analisando os coefficientes
+
+Analisando os coefficientes
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
-a <- 1
+attach(vinhos_brancos)
+
+modelopc1 <- summary(lm(quality ~ alcohol+residualsugar+totalsulfurdioxide+density))
+modelopc1
+
+modelopc3 <- summary(lm(quality ~ citricacid+volatileacidity+fixedacidity))
+modelopc3
 
 ```
 
-Váriaveis independentes
+Podemos observar no ModeloPC1;
+
+quality <- 100.7 + 0.2366(alcohol) + 0.05542(residualsugar) + 0.0004428(totalsulfurdioxide) + 98.35(density)
+
+R² <- 21,06%
+
+Verificamos então que esse modelopc1 como tentativa de escolher um modelo que explique a variável quality, percebemos estatisticamente que os estimadores para o caso de beta 3 (totalsulfurdioxide) é muito próximo de 0. Assumindo um nível de significância a 5% de probabilidade podemos vê que o P valor de beta 3 (totalsulfurdioxide), é superior ao nível de significância.
+
+Por esses motivos apresentados não a porque colocar totalsulfurdioxide no modelo.
+
+Podemos observar no ModeloPC3;
+
+Verificamos então que esse modelopc3 como tentativa de escolher um modelo que explique a variável quality, percebemos
+estatisticamente que os estimadores para o caso de beta 1 (citricacid) é muito próximo de 0. Pelo mesmo motivo apresentado do modelopc1. Não a porque colocar citricacid no modelo.
+
+quality <- 7.21420 - 0.28680(citricacid) - 1.76242(volatileacidity) - 0.12247(fixedacidity)
+
+R² <- 51,89%
+
+Reavaliando Modelos, depois da análise.
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
-b <- 2
+modelopc1 <- summary(lm(quality ~ alcohol+residualsugar+density))
+modelopc1
+
+modelopc3 <- summary(lm(quality ~ volatileacidity+fixedacidity))
+modelopc3
 
 ```
 
-  
+Podemos perceber agora que R² do modelopc1 é 21,02% e R² do modelopc3 é 51,87%. Por esse motivo escolhemos o modelopc3. Mesmo R² do modelopc3 não sendo muito adequado, foi o melhor que conseguimos, realizando diversos testes.
+
+#### Verificar pressuposições
+
+##### Residuos
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+res <- rstandard(lm(quality ~ volatileacidity+fixedacidity))
+
+modelo_fim <- lm(quality ~ volatileacidity+fixedacidity)
+
+plot(predict(modelo_fim), res, xlab = "Preditor linear",ylab = "Residuos")
+abline(h = 0, lty = 2)
+
+
+qqnorm(residuals(modelo_fim), ylab="Residuos",xlab="Quantis teóricos",main="")
+qqline(residuals(modelo_fim))
+```
+
+##### Teste de normalidade(Shapiro-Wilk)
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+shapiro.test(res)
+
+```
+
+Verificando os residuos do modelo escolhido, nos mostra que pelo teste de normalidade utilizando a estatística do teste e obtendo o resultado de 0.97168 e o p valor de 2.2e-16. O valor de P do teste é pequeno por isso rejeita-se a hipótese de
+normalidade dos residuos e por consequência, conclui-se que os erros não são normalmente distribuídos
+
+## Árvore de regressão
+
+Variáveis dependentes: 
+ModeloPC1 <- (quality)
+ModeloPC3 <- (quality)
+
+Variáveis independentes:
+ModeloPC1 <- (alcohol+residualsugar+density)
+ModeloPC3 <- (volatileacidity+fixedacidity)
+
+### Analisando ModeloPC1
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+
+modelopc1 <- rpart (quality ~ alcohol+residualsugar+density, data=vinhos_brancos, 
+                     cp = 0.001,minsplit = 5,maxdepth=10)
+
+rpart.plot(modelopc1, type=2, extra="auto", under=FALSE, clip.right.labs=TRUE,
+           fallen.leaves=TRUE,   digits=2, varlen=-3, faclen=15,
+           cex=NULL, tweak=1.7,
+           compress=TRUE,box.palette="auto",
+           snip=FALSE)
+
+Val_pred_tree <- predict(modelopc1,interval = "prediction", level = 0.95) 
+str(Val_pred_tree)
+
+
+mse_tree <- mean((vinhos_brancos$quality - Val_pred_tree)^2)
+sqrt(mse_tree)
+```
+
+### Analisando ModeloPC3
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+
+modelopc3 <- rpart (quality ~ volatileacidity+fixedacidity, data=vinhos_brancos, 
+                     cp = 0.001,minsplit = 5,maxdepth=10)
+
+rpart.plot(modelopc3, type=2, extra="auto", under=FALSE, clip.right.labs=TRUE,
+           fallen.leaves=TRUE,   digits=2, varlen=-3, faclen=15,
+           cex=NULL, tweak=1.7,
+           compress=TRUE,box.palette="auto",
+           snip=FALSE)
+
+```
+
