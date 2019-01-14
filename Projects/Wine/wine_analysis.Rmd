@@ -16,9 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Parte I
-
-## Bibliotecas
-```{r echo=TRUE, warning=FALSE, message=FALSE}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -28,60 +26,53 @@ library(tibble)
 library(stringr)
 library(rpart)
 library(rpart.plot)
-```
-
-## Importando os dados
-```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_dset <- read.csv2('BaseWine_Red_e_White2018.csv')
 ```
-
-### Identificando as variáveis
-
+  
+## Descrição de dados
+  
 Para começar nossa análise vamos identificar as variáveis para entender o que elas podem significar no contexto da composição de um vinho. 
 
 ```{r var_vinhos}
 str(wine_dset)
 ```
-<BR>
-"fixedacidity" -> *Acidex Fixa* : Acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil. <BR><BR>
-
-"volatileacidity" -> *Acidex Volátil* : É um componente do vinho que tipicamente cresce conforme o vinho envelhece e, em quando atinge um nível elevado, é responsável pelo aroma de vinagre. É o resultado da falta de cuidados durante a vinificação. <BR><BR>
-
-"citricacid" -> *Ácido Cítrico* : Nos vinhos o ácido cítrico tem pouca ou nenhuma presença. Nos vinhos tintos desaparece devido à ação de bactérias láticas (fermentação malolática). Sensorialmente é fresco, porém em alguns casos pode apresentar um leve final amargo. <BR><BR>
-
-"residualsugar" -> *Açucar Residual* : No processo de fermentação do vinho a levedura vai transformando o açúcar da uva em álcool. Por isso que, em teoria, quanto mais açúcar houver na uva, mais álcool haverá no vinho. Porem nem todo o açucar é transformado em alcool, e o açucar que resta no final do processo de fermentação é conhecido como açucar residual. <BR><BR>
-
-"chlorides" -> *Cloretos* : Os vinhos possuem em sua composição diversos produtos enológicos, sais e ácidos. Estes sais influenciam diretamente em sua qualidade. <BR><BR>
-
-"freesulfurdioxide" -> *Dioxido de Enxofre Livre* : As atividade antioxidásica do Dioxido de Enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o conseqüente escurecimento do vinho. <BR><BR>
-
-"totalsulfurdioxide" -> *Dioxido de Enxofre Total* : Dioxido de Enxofre é usado como conservante nos vinhos . <BR><BR>
-
-"density" -> *Densidade* : Define a leveza do vinhos, e pode ser caracterizado pelo tipo da uva ou por técnicas usadas na vinificação que podem ser determinantes na concentração da bebida. <BR><BR>
-
-"pH" -> *PH* : Vinhos são naturalmente ácidos, com a maioria indo de 2,8 a 4,0. Os níveis de pH estão intrinsecamente ligados ao estilo e qualidade dos vinhos. O pH relativamente baixo, na faixa de 3,1 a 3,4, parece ser pré-requisito para a produção de vinhos de alta qualidade com solidez. <BR><BR>
-
-"sulphates" -> *Sulfatos* : Os sulfitos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos. <BR><BR>
-
-"alcohol" -> *Alchool* : O teor ácido é aquele responsável por conferir a textura e sensação de frescor. O teor ácido do vinho está diretamente ligado ao tipo de uva com o qual foi produzido, e o ideal é encontrar o equilíbrio perfeito entre o açúcar e a acidez ideal na hora da colheita. <BR><BR>
-
-"quality" -> *Qualidade* : Uma infidade de aspectos influenciam na qualidade dos vinhos, desde aspectos como o nivel de oxidação, até a contaminação da rolha. <BR><BR>
-
-"Vinho" -> *Vinho* : Os principais tipos de vinhos são Tintos e Brancos, mas há também outros tipos como vinhos roses, doces e espumantes. <BR><BR>
   
-### Uma visão rápida no dataset
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-glimpse(wine_dset)
-```
+"fixedacidity" -> *Acidez Fixa* : acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil.  
   
-### Tamanho do dataset dividido pelo tipo de vinho
+"volatileacidity" -> *Acidez Volátil* : é um componente do vinho que tipicamente cresce conforme o vinho envelhece e, em quando atinge um nível elevado, é responsável pelo aroma de vinagre. É o resultado da falta de cuidados durante a vinificação.  
+  
+"citricacid" -> *Ácido Cítrico* : nos vinhos o ácido cítrico tem pouca ou nenhuma presença. Nos vinhos tintos desaparece devido à ação de bactérias láticas (fermentação malolática). Sensorialmente é fresco, porém em alguns casos pode apresentar um leve final amargo.
+  
+"residualsugar" -> *Açucar Residual* : no processo de fermentação do vinho a levedura vai transformando o açúcar da uva em álcool. Por isso que, em teoria, quanto mais açúcar houver na uva, mais álcool haverá no vinho. Porem nem todo o açucar é transformado em alcool, e o açucar que resta no final do processo de fermentação é conhecido como açucar residual.  
+  
+"chlorides" -> *Cloretos* : os vinhos possuem em sua composição diversos produtos enológicos, sais e ácidos. Estes sais influenciam diretamente em sua qualidade.  
+  
+"freesulfurdioxide" -> *Dióxido de Enxofre Livre* : as atividade antioxidásica do Dioxido de Enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o conseqüente escurecimento do vinho.  
+  
+"totalsulfurdioxide" -> *Dióxido de Enxofre Total* : dióxido de enxofre é usado como conservante nos vinhos.  
+  
+"density" -> *Densidade* : define a leveza do vinhos, e pode ser caracterizado pelo tipo da uva ou por técnicas usadas na vinificação que podem ser determinantes na concentração da bebida.  
+  
+"pH" -> *PH* : vinhos são naturalmente ácidos, com a maioria indo de 2,8 a 4,0. Os níveis de pH estão intrinsecamente ligados ao estilo e qualidade dos vinhos. O pH relativamente baixo, na faixa de 3,1 a 3,4, parece ser pré-requisito para a produção de vinhos de alta qualidade com solidez.  
+  
+"sulphates" -> *Sulfatos* : os sulfitos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos.  
+  
+"alcohol" -> *Alchool* : o teor ácido é aquele responsável por conferir a textura e sensação de frescor. O teor ácido do vinho está diretamente ligado ao tipo de uva com o qual foi produzido, e o ideal é encontrar o equilíbrio perfeito entre o açúcar e a acidez ideal na hora da colheita.  
+  
+"quality" -> *Qualidade* : uma infidade de aspectos influenciam na qualidade dos vinhos, desde aspectos como o nivel de oxidação, até a contaminação da rolha. No dataset a qualidade máxima é uma escala inteira entre 0 (menor qualidade) e 10 (maior qualidade).  
+  
+"Vinho" -> *Vinho* : há inúmeros tipos de vinho (ex: tintos, brancos, roses, doces e espumantes), porém nossos dados contém apenas dois tipos: brancos e tintos.  
+  
+### Tamanho do dataset
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_dset %>% 
   group_by(Vinho) %>% 
   count()
 ```
   
-### Integridade dos dados por tipo de vinho
+A quantidade de dados para os vinhos brancos é aproximadamente 3 vezes maior que o vinho tinto.  
+  
+### Integridade dos dados
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_white_dset <- 
   wine_dset %>%
@@ -96,12 +87,10 @@ sum(is.na(wine_red_dset))
                       
 ```
   
+Como as somas dos valores _NA_s, tanto para o vinho tinto quanto para o branco, podemos afirmar que __não há dados faltantes.__  
   
 ### Característica de cada tipo de vinho  
 O vinho branco e vermelho apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
-  
-#### Sumário dos dados  
-  
   
 __Vinho Branco__  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -114,49 +103,35 @@ __Vinho Vermelho__
 summary(wine_red_dset)
 ```
   
-##### Diferença da mediana das características  
-  
-  
-__Medianas - Tinto dataset__
-
+#### Diferença da mediana das características por tipo de vinho 
+A diferença alta em algumas característica sinaliza as particularidades que diferem o tipo de vinho (tinto ou branco). Será que por causa desta diferença faz sentido tratar esses dois vinhos como um só produto? Não seria interessante separá-los para uma maior precisão nas análise dos dados? 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-## fixedacidity
-
+# Vinho Tinto
 median_red_dset <-  sapply(select(wine_red_dset, -c(Vinho, id_vinho, quality)), median)
-
-
 median_red_dset <- as.data.frame(median_red_dset)
-`colnames<-`(median_red_dset, "Median")
+median_red_dset <- rownames_to_column(median_red_dset) %>% 
+  rename(Mediana = median_red_dset, Caracteristica = rowname) 
 
-```
-  
-  
-__Medianas - Branco dataset__
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-
+# Vinho Branco
 median_white_dset <-  sapply(select(wine_white_dset, -c(Vinho, id_vinho, quality)),median)
-
 median_white_dset <- as.data.frame(median_white_dset)
-`colnames<-`(median_white_dset, "Median")
+median_white_dset <- rownames_to_column(median_white_dset) %>% 
+  rename(Mediana = median_white_dset, Caracteristica = rowname) 
 
+# Diferenca
+mediana_diferenca <- data.frame(
+  Caracteristica = median_white_dset$Caracteristica,
+  Diferenca.Mediana = abs(median_white_dset$Mediana - median_red_dset$Mediana)
+)
+
+arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana))
 ```
   
+Nota: a ordem descendente dessas diferenças será utilizada nos plots para uma melhor visualização.
   
-__Diferença das medianas entre os dois tipos de vinhos__
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-Cmedian_differenc <- abs(median_white_dset - median_red_dset)
-Cmedian_differenc <- `colnames<-`(Cmedian_differenc, "Mediana_Difer")
-Cmedian_differenc <- rownames_to_column(Cmedian_differenc)
-Cmedian_differenc %>%
-  arrange(desc(Mediana_Difer)) %>%
-  rename(Caracteristica = rowname)
-```
-
-Nota: a ordem descendente dessas características será utilizada nos plots para uma melhor visualização: 
-
-##### Histogramas de cada característica  
+Vamos utilizar a análise gráfica pelo histograma para ajudar a responder essas questões acima:  
+  
+#### Histogramas de cada característica  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 plot_ly(wine_dset, y = ~totalsulfurdioxide,type = "box",
               color = ~Vinho, colors = c("red", "khaki")) %>% 
@@ -187,24 +162,45 @@ plot_ly(wine_dset, y = ~fixedacidity,type = "box",
       layout(title = "Acidez Fixa")
 
 ```
-
-Notando a media de cada característica, vemos uma diferença considerável pra cada vinho (Branco ou Vermelho), portanto, vamos pegar somente um tipo de vinho para uma análise coerente.  
   
-Como o número de dados pros vinhos brancos é bem maior do que o para os vermelhos (aprox. 3 vezes maior), seria interessante utilizar os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos pegar selecionar somente um tipo de vinho para uma análise coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que o para os vermelhos (aprox. 3 vezes maior), seria interessante utilizar os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+  
+### Remoção de outliers 
+Com os histogramas foi possível identificar também a existência de outliers nos dados pois há pontos que estão acima do limite da _upper fence_ ou abaixo da _lower fence_. Esses limites (lower e upper) são calculados utilizando a seguinte relação:  
+  
+___Upper fence___:  
+
+upper_fence = 3º Quartil + 1,5 * Amplitude inter-quartil
+
+___Lower fence___:  
+
+lower_fence = 1º Quartil - 1,5 * Amplitude inter-quartil
+
+Para evitar que esses outliers influenciem em nossos modelos, vamos extraí-los:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+wine_white_dset <- wine_white_dset %>% 
+  select(-c(Vinho, id_vinho))
+
+for (col in colnames(wine_white_dset)) {
+  upper_fence <- quantile(wine_white_dset[,col], 0.75, names = FALSE) +(1.5 * IQR(wine_white_dset[,col]))
+  lower_fence <- quantile(wine_white_dset[,col],0.25, names = FALSE) - (1.5 * IQR(wine_white_dset[,col]))
+  
+  idx <- which(wine_white_dset[,col] < lower_fence | wine_white_dset[,col] > upper_fence)
+  for (x in idx) {
+    wine_white_dset[x,col] <- NA
+  }
+}
+```
+
 
 # Parte II - (Vinhos Brancos)
-
-A partir da análise acima, decidimos continuar somente com os vinhos branco por causa da quantidade e outros aspectos relevantes das váriaveis envolvidas.
-
+  
 ## Regresão Linear
 
 Indentificando os componentes principais do dataset
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-#install.packages("dplyr")
-library(dplyr)
-
 vinhos_brancos <- wine_dset %>% filter(Vinho == 'WHITE')
 
 vinhos_brancos <- vinhos_brancos[2:13]
@@ -243,15 +239,12 @@ corrplot::corrplot(matcor, method="circle", order="hclust")
 Com base no gráfico gerado de componentes principais;
 
 Podemos observar que cada componente gerado pelo componentes principais
-tem uma certa especialidade. 
+tem uma certa especialidade: 
 
-A correlação de PC1 com alcohol,residualsugar,totalsulfurdioxide e density são maiores em relação as outras variáveis.
-
-A correlação de PC2 com Ph, fixadacity são maiores em relação as outras variáveis.
-
-A correlação de PC3 com citricacid, volatileacidity e fixadacity são maiores em relação as outras variáveis.
-
-A correlação de PC4 com chlorides e sulphates são maiores em relação as outras variáveis.
+* A correlação de PC1 com alcohol,residualsugar,totalsulfurdioxide e density são maiores em relação as outras variáveis.  
+* A correlação de PC2 com Ph, fixadacity são maiores em relação as outras variáveis.  
+* A correlação de PC3 com citricacid, volatileacidity e fixadacity são maiores em relação as outras variáveis.  
+* A correlação de PC4 com chlorides e sulphates são maiores em relação as outras variáveis.
 
 Mediante nossa análise dos componentes principais desse dataset, vamos utilizar os modelos PC1 e PC3, por possuirem melhor
 correlação com a variável qualidade: 
