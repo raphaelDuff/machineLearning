@@ -294,7 +294,7 @@ estatisticamente que os estimadores para o caso de beta 1 (citricacid) é muito p
 quality <- 7.21420 - 0.28680(citricacid) - 1.76242(volatileacidity) - 0.12247(fixedacidity)
 
 R² <- 51,89%
-
+ 
 Reavaliando Modelos, depois da análise.
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -465,4 +465,36 @@ Com base nas duas técnicas conseguimos enxergam alguns componentes que elevaram 
 
 No contexto geral o modelo PC1 mostrou os melhores resultados, usando a Árvore de Regressão.
 
+# Parte III
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+```
+
+# Parte IV
+
+<!-- a) quais outras técnicas supervisionadas vocês indicariam como adequadas
+para esta análise? -->
+
+## Técnicas supervisionadas que poderiam ser usadas
+
+### Gaussian Naive Bayes
+
+Uma técnica que pode ser adequada para classificação dos vinhos é Gaussian Naive Bayes essa técnica existe desde os anos 1950. Pertence a uma família de algoritmos chamados classificadores probabilísticos ou probabilidade condicional, onde também assume independência entre os recursos,isso nos permite prever uma classe/categoria, com base em determinado conjunto de recursos, usando probabilidade.O Naive Bayes pode ser aplicado efetivamente para alguns problemas de classificação, apesar de sua simplicidade, o classificador faz a definição de categorias surpreendentemente bem e é freqüentemente usado devido ao fato de superar métodos de classificação mais sofisticados.
+
+### Random forest
+
+Quando usadas sozinhas, as árvores de decisão são propensas a overfitting. No entanto, random forest (Várias árvores de decisão) ajudam corrigindo o possível overfitting que poderia ocorrer. A técnica Random forest utiliza uma multiplicidade de árvores de decisão diferentes com previsões diferentes, uma random forest combina os resultados dessas árvores individuais para fornecer os resultados finais.A random forest aplica um algoritmo conjunto chamado ensacamento às árvores de decisão, que ajuda a reduzir a variação e o ajuste excessivo.
+
+<!-- b) e, das técnicas Não Supervisionadas, quais? -->
+
+## Técnicas não supervisionadas que poderiam ser usadas
+
+### Generative Adversarial Networks (GANs)
+
+O Funcionamento de uma GAN se baseia em duas redes neurais uma Geradora e outra com o Discriminadora, o papel da rede geradora é falsificar dados e da rede Discriminadora é identificar quais dados foram falsificados. Ambas estão aprendendo e melhorando. A rede gerador está constantemente aprendendo a criar falsificações melhores, e a rede  Discriminadora está constantemente melhorando em detectá-los.
+
+### K-means
+
+É uma técnica de análise de cluster que permite agrupar os dados em grupos chamados clusters. Como os rótulos não são fornecidos para cada dado de treinamento, os clusters são determinados pela similaridade dos dados um do outro, essa técnica pode ser uma boa opção para a classificação dos vinhos já que possuímos um grande número de dados
 
