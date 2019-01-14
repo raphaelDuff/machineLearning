@@ -466,11 +466,80 @@ Com base nas duas técnicas conseguimos enxergam alguns componentes que elevaram 
 No contexto geral o modelo PC1 mostrou os melhores resultados, usando a Árvore de Regressão.
 
 # Parte III
+## Regressão Logística
+Para aplicarmor uma regressão logistica decidimos categorizar a qualidade dos vinhos em dois tipos, Vinhos Bons com uma qualidade igual ou superior a 7, ou vinhos ruins com uma pontuação de qualidade inferior a 7.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+summary(wine_white_dset$quality)
+```
+A razão de escolhermos 7 como nota divisora de vinhos bons e ruins é porquie a média da qualidade dos vinhos é de aproximandamente 6 e menos de um quarto dos vinhos brancos estão com nota 7 ou acima. Decidimos por categorizar como vinhos bons aqules que tem uma avaliação de qualidade acima da média.
+Assim podemos rodar uma regressão logistica com as variaveis usadas anteriormente para analisarmos se o modelo gerado é aceitável.
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+wine_white_dset <- wine_dset %>%
+  filter(Vinho == 'WHITE')
+Vinhos2Cat <- subset(wine_white_dset, select = -c(id_vinho))
+attach(Vinhos2Cat)
+Vinhos2Cat$quality_cat[quality >= 7] <- 'Bom'
+Vinhos2Cat$quality_cat[quality < 7] <- 'Ruim'
+
+Vinhos2Cat <- subset(Vinhos2Cat, select = -c(quality))
+
+set.seed(2019)
+prt <- 2/3
+
+Vinhos2Cat$quality_cat <- as.factor(Vinhos2Cat$quality_cat)
+
+treino <- sample(1:NROW(Vinhos2Cat), as.integer(prt*NROW(Vinhos2Cat)))
+
+trainData <- Vinhos2Cat[treino,]
+testData  <- Vinhos2Cat[-treino,]
+
+modelo_log<-glm(quality_cat ~ alcohol+residualsugar+density, trainData, family=binomial(link=logit))
+summary(modelo_log)
+```
+O p-value para todas as variáveis está ótimo, podemos usar esse modelo na nossa base de teste para calcularmos a acurácia.
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
-```
+attach(testData)
+Predito_teste<-predict(modelo_log, testData)
 
+
+fx_predito <- cut(Predito_teste, breaks=c(-1,2.5,4), right=F)
+
+MC <- table( quality_cat,  fx_predito , deparse.level = 2) #
+show(MC) 
+ACC = sum(diag(MC))/sum(MC) 
+show(ACC) 
+
+```
+Aqui podemos ver a matriz de confusão, onde há 326 falsos positivos e 249 falsos negativos, com um total de 35% de acurácia. Esse modelo é melhor identificando os vinhos ruins, do que os bons, mas mesmo assim não consegue um resultado muito satisfatório.
+
+
+## Arvore de Decisão
+Vamos tentar com a arvore de decisão, usando as mesmas variáveis:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modelo_tree <- rpart (quality_cat ~ alcohol+residualsugar+density, data=trainData, cp = 0.006,minsplit = 150,maxdepth=10)
+
+
+rpart.plot(modelo_tree, type=4, extra=104, under=FALSE, clip.right.labs=TRUE,
+           fallen.leaves=FALSE,   digits=2, varlen=-3, faclen=20,
+           cex=0.4, tweak=1.7,
+           compress=TRUE,
+           snip=FALSE)
+
+```
+Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa arvore:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+pred_class <- predict(modelo_tree ,testData , type = "class")
+
+Campanha.matriz.de.confusao<-table(testData$quality_cat, pred_class)
+Campanha.matriz.de.confusao
+
+diagonal <- diag(Campanha.matriz.de.confusao)
+perc.erro <- 1 - sum(diagonal)/sum(Campanha.matriz.de.confusao)
+perc.erro
+```
+A arvore de decisão com essas variáveis obtem apenas 19% de acurácia, muito abaixo da regressão logistica.
 # Parte IV
 
 <!-- a) quais outras técnicas supervisionadas vocês indicariam como adequadas
