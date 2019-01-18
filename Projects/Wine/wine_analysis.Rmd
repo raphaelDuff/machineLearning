@@ -36,32 +36,40 @@ Para começar nossa análise vamos identificar as variáveis para entender o que el
 ```{r var_vinhos}
 str(wine_dset)
 ```
+__PH:__ vinhos são naturalmente ácidos, com a maioria indo de 2,8 a 4,0. Os níveis de pH estão intrinsecamente ligados ao estilo e qualidade dos vinhos. O pH relativamente baixo, na faixa de 3,1 a 3,4, parece ser pré-requisito para a produção de vinhos de alta qualidade com solidez.  
+__Acidez Volátil:__ é um componente do vinho que tipicamente cresce conforme o vinho envelhece e, em quando atinge um nível elevado, é responsável pelo aroma de vinagre. É o resultado da falta de cuidados durante a vinificação.  
+__Acidez Fixa:__ acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil.
+__Ácido Cítrico:__ nos vinhos o ácido cítrico tem pouca ou nenhuma presença. Nos vinhos tintos desaparece devido à ação de bactérias láticas (fermentação malolática). Sensorialmente é fresco, porém em alguns casos pode apresentar um leve final amargo.  
   
-"fixedacidity" -> *Acidez Fixa* : acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil.  
+__Dióxido de Enxofre Livre:__ as atividade antioxidásica do Dioxido de Enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o conseqüente escurecimento do vinho.  
+__Dióxido de Enxofre Total:__ dióxido de enxofre é usado como conservante nos vinhos.  
+    [IOWA State University - Total sulfur dioxide Why it Matters too](https://www.extension.iastate.edu/wine/total-sulfur-dioxide-why-it-matters-too) 
+
+> "Na vinificação, o uso de dióxido de enxofre (SO2) é crítico. Nós tendemos a falar muito sobre o SO2 livre (FSO2) em particular, e não sem uma boa razão. O FSO2 e o pH do seu vinho determinam quanto SO2 está disponível na forma molecular ativa para ajudar a proteger o vinho da oxidação e da deterioração. O FSO2 também é algo que temos que vigiar de perto, porque pode ser difícil prever quanto será perdido, e a que velocidade, a ligação ou a aeração. Excesso de FSO2 pode ser perceptível aos consumidores, mascarando os aromas frutados do vinho e inibindo sua capacidade de sofrer a cascata de reações de uso de oxigênio que acontecem quando "respira" ou, em concentrações suficientemente altas, contribuindo com um sabor ou sensação  amarga/mordaz/metálica."
+>
+> --- [IOWA State University - Total sulfur dioxide Why it Matters too](https://www.extension.iastate.edu/wine/total-sulfur-dioxide-why-it-matters-too)  
   
-"volatileacidity" -> *Acidez Volátil* : é um componente do vinho que tipicamente cresce conforme o vinho envelhece e, em quando atinge um nível elevado, é responsável pelo aroma de vinagre. É o resultado da falta de cuidados durante a vinificação.  
+[Sulphur Dioxide Content of Wines: the Role of Winemaking and Carbonyl Compounds](https://grapesandwine.cals.cornell.edu/sites/grapesandwine.cals.cornell.edu/files/shared/documents/Research-Focus-2011-3.pdf)  
+    
   
-"citricacid" -> *Ácido Cítrico* : nos vinhos o ácido cítrico tem pouca ou nenhuma presença. Nos vinhos tintos desaparece devido à ação de bactérias láticas (fermentação malolática). Sensorialmente é fresco, porém em alguns casos pode apresentar um leve final amargo.
   
-"residualsugar" -> *Açucar Residual* : no processo de fermentação do vinho a levedura vai transformando o açúcar da uva em álcool. Por isso que, em teoria, quanto mais açúcar houver na uva, mais álcool haverá no vinho. Porem nem todo o açucar é transformado em alcool, e o açucar que resta no final do processo de fermentação é conhecido como açucar residual.  
+__Açúcar Residual:__ no processo de fermentação do vinho a levedura vai transformando o açúcar da uva em álcool. Por isso que, em teoria, quanto mais açúcar houver na uva, mais álcool haverá no vinho. Porem nem todo o açúcar é transformado em alcool, e o açúcar que resta no final do processo de fermentação é conhecido como açúcar residual.  
   
-"chlorides" -> *Cloretos* : os vinhos possuem em sua composição diversos produtos enológicos, sais e ácidos. Estes sais influenciam diretamente em sua qualidade.  
   
-"freesulfurdioxide" -> *Dióxido de Enxofre Livre* : as atividade antioxidásica do Dioxido de Enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o conseqüente escurecimento do vinho.  
+__Cloretos:__ os vinhos possuem em sua composição diversos produtos enológicos, sais e ácidos. Estes sais influenciam diretamente em sua qualidade.  
   
-"totalsulfurdioxide" -> *Dióxido de Enxofre Total* : dióxido de enxofre é usado como conservante nos vinhos.  
   
-"density" -> *Densidade* : define a leveza do vinhos, e pode ser caracterizado pelo tipo da uva ou por técnicas usadas na vinificação que podem ser determinantes na concentração da bebida.  
+__Densidade:__ define a leveza do vinhos, e pode ser caracterizado pelo tipo da uva ou por técnicas usadas na vinificação que podem ser determinantes na concentração da bebida.  
   
-"pH" -> *PH* : vinhos são naturalmente ácidos, com a maioria indo de 2,8 a 4,0. Os níveis de pH estão intrinsecamente ligados ao estilo e qualidade dos vinhos. O pH relativamente baixo, na faixa de 3,1 a 3,4, parece ser pré-requisito para a produção de vinhos de alta qualidade com solidez.  
+
+__Álcool:__????? o teor ácido é aquele responsável por conferir a textura e sensação de frescor. O teor ácido do vinho está diretamente ligado ao tipo de uva com o qual foi produzido, e o ideal é encontrar o equilíbrio perfeito entre o açúcar e a acidez ideal na hora da colheita.  
   
-"sulphates" -> *Sulfatos* : os sulfitos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos.  
+__Sulfatos:__ os sulfitos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos.  
   
-"alcohol" -> *Alchool* : o teor ácido é aquele responsável por conferir a textura e sensação de frescor. O teor ácido do vinho está diretamente ligado ao tipo de uva com o qual foi produzido, e o ideal é encontrar o equilíbrio perfeito entre o açúcar e a acidez ideal na hora da colheita.  
   
-"quality" -> *Qualidade* : uma infidade de aspectos influenciam na qualidade dos vinhos, desde aspectos como o nivel de oxidação, até a contaminação da rolha. No dataset a qualidade máxima é uma escala inteira entre 0 (menor qualidade) e 10 (maior qualidade).  
+__Qualidade:__ uma infidade de aspectos influenciam na qualidade dos vinhos, desde aspectos como o nivel de oxidação, até a contaminação da rolha. No dataset a qualidade máxima é uma escala inteira entre 0 (menor qualidade) e 10 (maior qualidade).  
   
-"Vinho" -> *Vinho* : há inúmeros tipos de vinho (ex: tintos, brancos, roses, doces e espumantes), porém nossos dados contém apenas dois tipos: brancos e tintos.  
+__Vinho:__ há inúmeros tipos de vinho (ex: tintos, brancos, roses, doces e espumantes), porém nossos dados contém apenas dois tipos: brancos e tintos.  
   
 ### Tamanho do dataset
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -124,10 +132,15 @@ mediana_diferenca <- data.frame(
   Diferenca.Mediana = abs(median_white_dset$Mediana - median_red_dset$Mediana)
 )
 
-arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana))
+top_n(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)), dim(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)))[1])
 ```
+
+Através das medianas, três valores chamaram atenção entre os tipos de vinho: __totalsulfurdioxide__, __freesulfurdioxide__ e __residualsugar__.
+
+Searching @web: 
   
-Nota: a ordem descendente dessas diferenças será utilizada nos plots para uma melhor visualização.
+  [IOWA State University - Total sulfur dioxide Why it Matters too](https://www.extension.iastate.edu/wine/total-s
+  Nota: a ordem descendente dessas diferenças será utilizada nos plots para uma melhor visualização.
   
 Vamos utilizar a análise gráfica pelo histograma para ajudar a responder essas questões acima:  
   
