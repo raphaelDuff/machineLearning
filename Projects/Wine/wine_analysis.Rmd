@@ -37,41 +37,39 @@ Para começar nossa análise vamos identificar as variáveis para entender o que el
 str(wine_dset)
 ```
 __PH:__ vinhos são naturalmente ácidos, com a maioria indo de 2,8 a 4,0. Os níveis de pH estão intrinsecamente ligados ao estilo e qualidade dos vinhos. O pH relativamente baixo, na faixa de 3,1 a 3,4, parece ser pré-requisito para a produção de vinhos de alta qualidade com solidez.  
+  
 __Acidez Volátil:__ é um componente do vinho que tipicamente cresce conforme o vinho envelhece e, em quando atinge um nível elevado, é responsável pelo aroma de vinagre. É o resultado da falta de cuidados durante a vinificação.  
-__Acidez Fixa:__ acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil.
+  
+__Acidez Fixa:__ acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil.  
+  
 __Ácido Cítrico:__ nos vinhos o ácido cítrico tem pouca ou nenhuma presença. Nos vinhos tintos desaparece devido à ação de bactérias láticas (fermentação malolática). Sensorialmente é fresco, porém em alguns casos pode apresentar um leve final amargo.  
   
-__Dióxido de Enxofre Livre:__ as atividade antioxidásica do Dioxido de Enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o conseqüente escurecimento do vinho.  
-__Dióxido de Enxofre Total:__ dióxido de enxofre é usado como conservante nos vinhos.  
-    [IOWA State University - Total sulfur dioxide Why it Matters too](https://www.extension.iastate.edu/wine/total-sulfur-dioxide-why-it-matters-too) 
-
-> "Na vinificação, o uso de dióxido de enxofre (SO2) é crítico. Nós tendemos a falar muito sobre o SO2 livre (FSO2) em particular, e não sem uma boa razão. O FSO2 e o pH do seu vinho determinam quanto SO2 está disponível na forma molecular ativa para ajudar a proteger o vinho da oxidação e da deterioração. O FSO2 também é algo que temos que vigiar de perto, porque pode ser difícil prever quanto será perdido, e a que velocidade, a ligação ou a aeração. Excesso de FSO2 pode ser perceptível aos consumidores, mascarando os aromas frutados do vinho e inibindo sua capacidade de sofrer a cascata de reações de uso de oxigênio que acontecem quando "respira" ou, em concentrações suficientemente altas, contribuindo com um sabor ou sensação  amarga/mordaz/metálica."
->
-> --- [IOWA State University - Total sulfur dioxide Why it Matters too](https://www.extension.iastate.edu/wine/total-sulfur-dioxide-why-it-matters-too)  
+__Dióxido de Enxofre Livre:__ as atividade antioxidásica do dióxido de enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o consequentemente o escurecimento do vinho. O excesso de dióxido de enxofre livre tem um grande impacto no sabor, deixando-o mais amargo e com uma sensação mais metálica.  
   
-[Sulphur Dioxide Content of Wines: the Role of Winemaking and Carbonyl Compounds](https://grapesandwine.cals.cornell.edu/sites/grapesandwine.cals.cornell.edu/files/shared/documents/Research-Focus-2011-3.pdf)  
-    
-  
+__Dióxido de Enxofre Total:__ quanto mais dióxido de enxofre total estiver disponível, mais estável será o dióxido de enxofre livre.  
   
 __Açúcar Residual:__ no processo de fermentação do vinho a levedura vai transformando o açúcar da uva em álcool. Por isso que, em teoria, quanto mais açúcar houver na uva, mais álcool haverá no vinho. Porem nem todo o açúcar é transformado em alcool, e o açúcar que resta no final do processo de fermentação é conhecido como açúcar residual.  
   
-  
 __Cloretos:__ os vinhos possuem em sua composição diversos produtos enológicos, sais e ácidos. Estes sais influenciam diretamente em sua qualidade.  
-  
   
 __Densidade:__ define a leveza do vinhos, e pode ser caracterizado pelo tipo da uva ou por técnicas usadas na vinificação que podem ser determinantes na concentração da bebida.  
   
-
-__Álcool:__????? o teor ácido é aquele responsável por conferir a textura e sensação de frescor. O teor ácido do vinho está diretamente ligado ao tipo de uva com o qual foi produzido, e o ideal é encontrar o equilíbrio perfeito entre o açúcar e a acidez ideal na hora da colheita.  
+__Álcool:__ essa é uma característica que causa controversa entre sommeliers. Embora há vinhos premiados com uma porcentagem maior de álcool, outros defendem que para o vinho ser de qualidade tem que ser inferior a 14% de álcool.  
   
-__Sulfatos:__ os sulfitos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos.  
-  
+__Sulfatos:__ os sulfatos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos.  
   
 __Qualidade:__ uma infidade de aspectos influenciam na qualidade dos vinhos, desde aspectos como o nivel de oxidação, até a contaminação da rolha. No dataset a qualidade máxima é uma escala inteira entre 0 (menor qualidade) e 10 (maior qualidade).  
   
 __Vinho:__ há inúmeros tipos de vinho (ex: tintos, brancos, roses, doces e espumantes), porém nossos dados contém apenas dois tipos: brancos e tintos.  
+
+Links acessados para fundamentação teórica:
+ 
+* https://www.extension.iastate.edu/wine/white-wine-production
+* https://www.extension.iastate.edu/wine/total-sulfur-dioxide-why-it-matters-too
+* https://grapesandwine.cals.cornell.edu/sites/grapesandwine.cals.cornell.edu/files/shared/documents/Research-Focus-2011-3.pdf
+* https://www.whichwinery.com/ask-the-somm/breaking-down-booze-wine-alcohol-levels-explored/
   
-### Tamanho do dataset
+### Dimensão do dataset
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_dset %>% 
   group_by(Vinho) %>% 
@@ -80,7 +78,8 @@ wine_dset %>%
   
 A quantidade de dados para os vinhos brancos é aproximadamente 3 vezes maior que o vinho tinto.  
   
-### Integridade dos dados
+### Integridade dos dados  
+Antes de qualquer análise, vamos conferir se nosso dataset não apresenta valores faltantes:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_white_dset <- 
   wine_dset %>%
@@ -95,10 +94,10 @@ sum(is.na(wine_red_dset))
                       
 ```
   
-Como as somas dos valores _NA_s, tanto para o vinho tinto quanto para o branco, podemos afirmar que __não há dados faltantes.__  
+Como as somas dos valores _NA_s, tanto para o vinho tinto quanto para o branco, podemos afirmar que __não há dados faltantes.__ Dessa forma podemos continuar sem precisar substituir ou remover os valores iguais a _NA_.
   
 ### Característica de cada tipo de vinho  
-O vinho branco e vermelho apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
+O vinho branco e tinto apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
   
 __Vinho Branco__  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -106,13 +105,13 @@ summary(wine_white_dset)
 ```
   
   
-__Vinho Vermelho__  
+__Vinho Tinto__  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 summary(wine_red_dset)
 ```
   
 #### Diferença da mediana das características por tipo de vinho 
-A diferença alta em algumas característica sinaliza as particularidades que diferem o tipo de vinho (tinto ou branco). Será que por causa desta diferença faz sentido tratar esses dois vinhos como um só produto? Não seria interessante separá-los para uma maior precisão nas análise dos dados? 
+Trabalharemos com os valores das medianas, ao invés das médias, porque as medianas não sofrem o impacto que as médias teriam devido a presença de outliers. Explorando esses dados é possível ter um overview de como essas característica estão organizadas pelo dataset e, também, identificar o que diferece um vinho tinto do branco.  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 # Vinho Tinto
 median_red_dset <-  sapply(select(wine_red_dset, -c(Vinho, id_vinho, quality)), median)
@@ -134,15 +133,10 @@ mediana_diferenca <- data.frame(
 
 top_n(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)), dim(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)))[1])
 ```
-
+  
 Através das medianas, três valores chamaram atenção entre os tipos de vinho: __totalsulfurdioxide__, __freesulfurdioxide__ e __residualsugar__.
 
-Searching @web: 
-  
-  [IOWA State University - Total sulfur dioxide Why it Matters too](https://www.extension.iastate.edu/wine/total-s
-  Nota: a ordem descendente dessas diferenças será utilizada nos plots para uma melhor visualização.
-  
-Vamos utilizar a análise gráfica pelo histograma para ajudar a responder essas questões acima:  
+Vamos utilizar a análise gráfica, com as três características acima, para reforçar a visualização dos valores já obtidos na função _summary_. A visualização gráfica por histogramas nos auxilia também na detecção de outliers:
   
 #### Histogramas de cada característica  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -176,7 +170,15 @@ plot_ly(wine_dset, y = ~fixedacidity,type = "box",
 
 ```
   
-Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos pegar selecionar somente um tipo de vinho para uma análise coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que o para os vermelhos (aprox. 3 vezes maior), seria interessante utilizar os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+plot_ly(wine_dset, y = ~pH,type = "box",
+              color = ~Vinho, colors = c("red", "khaki")) %>% 
+      layout(title = "pH")
+
+```
+  
+Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos pegar selecionar somente um tipo de vinho para uma análise coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que o para os tintos (aprox. 3 vezes maior), utilizararem os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
   
 ### Remoção de outliers 
 Com os histogramas foi possível identificar também a existência de outliers nos dados pois há pontos que estão acima do limite da _upper fence_ ou abaixo da _lower fence_. Esses limites (lower e upper) são calculados utilizando a seguinte relação:  
@@ -205,13 +207,13 @@ for (col in colnames(wine_white_dset)) {
   }
 }
 ```
-
-
+  
+  
 # Parte II - (Vinhos Brancos)
   
 ## Regresão Linear
 
-Indentificando os componentes principais do dataset
+Identificando os componentes principais do dataset:
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 vinhos_brancos <- wine_dset %>% filter(Vinho == 'WHITE')
@@ -474,7 +476,7 @@ Percebemos que os vinhos com valor de volatileacidity abaixo de 0.1300 tem um po
 
 ## Resumo Regressão linear / Árvore de Regressão
 
-Com base nas duas técnicas conseguimos enxergam alguns componentes que elevaram o padrão de qualidade do vinho, com alguns diferenciais para cada uma. A técnica de regressão linear parece ser mais segura em mostrar que os componentes citricacid, volatileaciditye e fixedacidity são os causadores de uma maior qualidade do vinho. Já a técnica de árvore de regressão mostra de uma forma mais transparente e fácil de enxergar que a qualidade do vinho é mais elevada por causa dos componentes residualsugar, density e alcohol. Ou seja o modelo pc3 se mostrou mais adequado na regressão linear, e o modelo pc1 se mostrou mais adequado na árvore de regressão.
+Com base nas duas técnicas conseguimos enxergar alguns componentes que elevaram o padrão de qualidade do vinho, com alguns diferenciais para cada uma. A técnica de regressão linear parece ser mais segura em mostrar que os componentes citricacid, volatileaciditye e fixedacidity são os causadores de uma maior qualidade do vinho. Já a técnica de árvore de regressão mostra de uma forma mais transparente e fácil de enxergar que a qualidade do vinho é mais elevada por causa dos componentes residualsugar, density e alcohol. Ou seja o modelo pc3 se mostrou mais adequado na regressão linear, e o modelo pc1 se mostrou mais adequado na árvore de regressão.
 
 No contexto geral o modelo PC1 mostrou os melhores resultados, usando a Árvore de Regressão.
 
