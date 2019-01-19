@@ -94,7 +94,7 @@ sum(is.na(wine_red_dset))
                       
 ```
   
-Como as somas dos valores _NA_s, tanto para o vinho tinto quanto para o branco, podemos afirmar que __não há dados faltantes.__ Dessa forma podemos continuar sem precisar substituir ou remover os valores iguais a _NA_.
+Como as somas dos valores *NA*s, tanto para o vinho tinto quanto para o branco, podemos afirmar que __não há dados faltantes.__ Dessa forma podemos continuar sem precisar substituir ou remover os valores iguais a _NA_.
   
 ### Característica de cada tipo de vinho  
 O vinho branco e tinto apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
@@ -111,7 +111,7 @@ summary(wine_red_dset)
 ```
   
 #### Diferença da mediana das características por tipo de vinho 
-Trabalharemos com os valores das medianas, ao invés das médias, porque as medianas não sofrem o impacto que as médias teriam devido a presença de outliers. Explorando esses dados é possível ter um overview de como essas característica estão organizadas pelo dataset e, também, identificar o que diferece um vinho tinto do branco.  
+Trabalharemos com os valores das medianas, ao invés das médias, porque as medianas não sofrem o impacto que as médias sofreria devido a presença de outliers. Explorando esses dados é possível ter um overview de como essas característica estão organizadas pelo dataset e, também, identificar o que difere um vinho tinto do branco.  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 # Vinho Tinto
 median_red_dset <-  sapply(select(wine_red_dset, -c(Vinho, id_vinho, quality)), median)
@@ -134,8 +134,15 @@ mediana_diferenca <- data.frame(
 top_n(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)), dim(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)))[1])
 ```
   
-Através das medianas, três valores chamaram atenção entre os tipos de vinho: __totalsulfurdioxide__, __freesulfurdioxide__ e __residualsugar__.
+Através das medianas, três valores chamaram atenção entre os tipos de vinho: __totalsulfurdioxide__, __freesulfurdioxide__ e __residualsugar__.  
+Uma variável chamou a atenção desde o tópico "Descrição dos Dados", o *freesulfurdioxide*, por sua descrição dar indícios que este valor está relacionado ao sabor e, consequentemente, a qualidade do vinho. Testando esta relação:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+by(wine_white_dset$freesulfurdioxide, wine_white_dset$quality, median)
+```
 
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+by(wine_red_dset$freesulfurdioxide, wine_red_dset$quality, median)
+```
 Vamos utilizar a análise gráfica, com as três características acima, para reforçar a visualização dos valores já obtidos na função _summary_. A visualização gráfica por histogramas nos auxilia também na detecção de outliers:
   
 #### Histogramas de cada característica  
@@ -178,7 +185,7 @@ plot_ly(wine_dset, y = ~pH,type = "box",
 
 ```
   
-Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos pegar selecionar somente um tipo de vinho para uma análise coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que o para os tintos (aprox. 3 vezes maior), utilizararem os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos selecionar somente um tipo de vinho para uma análise coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que o para os tintos (aprox. 3 vezes maior), utilizararem os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
   
 ### Remoção de outliers 
 Com os histogramas foi possível identificar também a existência de outliers nos dados pois há pontos que estão acima do limite da _upper fence_ ou abaixo da _lower fence_. Esses limites (lower e upper) são calculados utilizando a seguinte relação:  
