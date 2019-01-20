@@ -1,7 +1,7 @@
 ---
-title: "Statistics - Wine"
+title: "Estatística - Análise da qualidade de vinhos"
 author: "IA - 04"
-date: "1 de janeiro de 2019"
+date: '`r Sys.Date()`'
 output:
   html_document:
     fig_height: 6
@@ -111,7 +111,7 @@ summary(wine_red_dset)
 ```
   
 #### Diferença da mediana das características por tipo de vinho 
-Trabalharemos com os valores das medianas, ao invés das médias, porque as medianas não sofrem o impacto que as médias sofreria devido a presença de outliers. Explorando esses dados é possível ter um overview de como essas característica estão organizadas pelo dataset e, também, identificar o que difere um vinho tinto do branco.  
+Trabalharemos com os valores das medianas, ao invés das médias, porque as medianas não sofrem o impacto que as médias sofreria devido a presença de outliers. Explorando esses dados é possível ter um overview de como essas característica estão organizadas pelo dataset e identificar o que difere um vinho tinto do branco.  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 # Vinho Tinto
 median_red_dset <-  sapply(select(wine_red_dset, -c(Vinho, id_vinho, quality)), median)
@@ -135,15 +135,8 @@ top_n(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)), dim
 ```
   
 Através das medianas, três valores chamaram atenção entre os tipos de vinho: __totalsulfurdioxide__, __freesulfurdioxide__ e __residualsugar__.  
-Uma variável chamou a atenção desde o tópico "Descrição dos Dados", o *freesulfurdioxide*, por sua descrição dar indícios que este valor está relacionado ao sabor e, consequentemente, a qualidade do vinho. Testando esta relação:  
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-by(wine_white_dset$freesulfurdioxide, wine_white_dset$quality, median)
-```
-
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-by(wine_red_dset$freesulfurdioxide, wine_red_dset$quality, median)
-```
-Vamos utilizar a análise gráfica, com as três características acima, para reforçar a visualização dos valores já obtidos na função _summary_. A visualização gráfica por histogramas nos auxilia também na detecção de outliers:
+  
+Vamos utilizar a análise gráfica, com as três características acima, para reforçar a visualização dos valores já obtidos na função _summary_ (a visualização gráfica por histogramas nos auxilia também na detecção de outliers):
   
 #### Histogramas de cada característica  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -185,7 +178,44 @@ plot_ly(wine_dset, y = ~pH,type = "box",
 
 ```
   
-Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos selecionar somente um tipo de vinho para uma análise coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que o para os tintos (aprox. 3 vezes maior), utilizararem os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos selecionar somente um tipo de vinho para a criação de um modelo preditivo coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que para os tintos (aprox. 3 vezes maior), utilizaremos os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+  
+Antes de prosseguirmos para a parte de remoção de outliers e a regressão linear, a variável o *freesulfurdioxide* chamou a atenção desde o tópico "Descrição dos Dados" por sua descrição dar indícios que este valor está relacionado ao sabor e, consequentemente, a qualidade do vinho. Testando esta relação:  
+  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+wine_dset %>%
+  group_by(quality, freesulfurdioxide) %>% 
+  ggplot(aes(factor(quality), freesulfurdioxide, color = quality)) +
+  geom_boxplot() +
+  theme(legend.position = "none") +
+  facet_wrap(~Vinho ) +
+  labs(y = "Dióxido de enxofre", x = "Qualidade")
+```
+  
+Embora os vinhos de maior qualidade apresentam um baixo valor de dióxido de enxofre livre, a relação dos outros valores com qualidade se mostrou insuficiente para determinar se o vinho é bom ou não, ou seja, outras características correlacionadas com o dióxido de enxofre livre devem explicar melhor a qualidade.  
+
+### Correlação
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+wine_white_dset <- wine_white_dset %>% 
+  select(-c(Vinho, id_vinho))
+
+whitedset_cor <- cor(wine_white_dset)
+
+corrplot::corrplot(whitedset_cor, method="circle", order="hclust")
+
+```
+  
+Pela matriz de correlação é perceptível como algumas variáveis se correlacionam mais com o restante do dataset do que as outras, são elas: *density*, *totalsufurdioxide*,  *freesufurdioxide*  e *alcohol*.
+  
+### Componentes principais  
+As características que possuem similaridade alta no nível da correlação podem trazer informações redundantes e aumentar a instabilidade dos modelos, por isso, usaremos a análise de componentes principais para combinar essas variáveis para formar componentes ortogonais (não relacionadas com os componentes anteriores).  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+acpcor <- prcomp(wine_white_dset, scale = TRUE)
+summary(acpcor)
+plot(1:ncol(wine_white_dset), acpcor$sdev^2, type = "b", xlab = "Componente",
+     ylab = "Variância", pch = 20, cex.axis = 0.8, cex.lab = 0.8)
+```
   
 ### Remoção de outliers 
 Com os histogramas foi possível identificar também a existência de outliers nos dados pois há pontos que estão acima do limite da _upper fence_ ou abaixo da _lower fence_. Esses limites (lower e upper) são calculados utilizando a seguinte relação:  
@@ -198,12 +228,8 @@ ___Lower fence___:
 
 lower_fence = 1º Quartil - 1,5 * Amplitude inter-quartil
 
-Para evitar que esses outliers influenciem em nossos modelos, vamos extraí-los:  
+Para evitar que esses outliers influenciem em nossos modelos, vamos substituí-los por *NA*:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-wine_white_dset <- wine_white_dset %>% 
-  select(-c(Vinho, id_vinho))
-
 for (col in colnames(wine_white_dset)) {
   upper_fence <- quantile(wine_white_dset[,col], 0.75, names = FALSE) +(1.5 * IQR(wine_white_dset[,col]))
   lower_fence <- quantile(wine_white_dset[,col],0.25, names = FALSE) - (1.5 * IQR(wine_white_dset[,col]))
@@ -219,72 +245,42 @@ for (col in colnames(wine_white_dset)) {
 # Parte II - (Vinhos Brancos)
   
 ## Regresão Linear
-
-Identificando os componentes principais do dataset:
+O objetivo desta sessão é criar um modelo de regressão linear para estimar o índice de qualidade dos vinhos.
+Como podemos observar da análise do tópico anterior, os componentes PC1, PC2, PC3 e PC4 se mostram os mais relevantes para a escolha do modelo.
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 vinhos_brancos <- wine_dset %>% filter(Vinho == 'WHITE')
-
 vinhos_brancos <- vinhos_brancos[2:13]
-
-fix(vinhos_brancos)
-
-Padr_Vinhos <- scale(vinhos_brancos)
-acpcor <- prcomp(Padr_Vinhos, scale = TRUE)
-
-summary(acpcor)
-
-plot(1:ncol(Padr_Vinhos), acpcor$sdev^2, type = "b", xlab = "Componente",
-     ylab = "Variância", pch = 20, cex.axis = 0.8, cex.lab = 0.8)
-
-```
-
-Como podemos observar os componentes PC1, PC2, PC3 e PC4 se mostram os mais relevantes para a escolha do modelo.
-
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-
 Vinhos2 <- vinhos_brancos %>%
   mutate(pc1 = acpcor$x[, 1]) %>%
   mutate(pc2 = acpcor$x[, 2]) %>%
   mutate(pc3 = acpcor$x[, 3]) %>%
   mutate(pc4 = acpcor$x[, 4]) 
-
-matcor <- cor(Vinhos2)
-
-#install.packages("corrplot")
-library(corrplot)
-
-corrplot::corrplot(matcor, method="circle", order="hclust")
-
 ```
-
-Com base no gráfico gerado de componentes principais;
-
-Podemos observar que cada componente gerado pelo componentes principais
-tem uma certa especialidade: 
-
+Da matriz de correlação:  
+  
 * A correlação de PC1 com alcohol,residualsugar,totalsulfurdioxide e density são maiores em relação as outras variáveis.  
 * A correlação de PC2 com Ph, fixadacity são maiores em relação as outras variáveis.  
 * A correlação de PC3 com citricacid, volatileacidity e fixadacity são maiores em relação as outras variáveis.  
 * A correlação de PC4 com chlorides e sulphates são maiores em relação as outras variáveis.
 
-Mediante nossa análise dos componentes principais desse dataset, vamos utilizar os modelos PC1 e PC3, por possuirem melhor
+Mediante nossa análise dos componentes principais desse dataset, vamos utilizar os modelos PC1 e PC3 por possuirem melhor
 correlação com a variável qualidade: 
 
 
 ### Analisando o modelo
 
-Variáveis dependentes: 
-ModeloPC1 <- (quality)
-ModeloPC3 <- (quality)
+Variáveis dependentes:   
+ModeloPC1 <- (quality)  
+ModeloPC3 <- (quality)  
+  
+Variáveis independentes:  
+ModeloPC1 <- (alchool,residualsugar,totalsulfurdioxide,density)  
+ModeloPC3 <- (citricacid,volatileacidity,fixedacidity)  
+  
+#### Analisando os coeficientes
 
-Variáveis independentes:
-ModeloPC1 <- (alchool,residualsugar,totalsulfurdioxide,density)
-ModeloPC3 <- (citricacid,volatileacidity,fixedacidity)
-
-#### Analisando os coefficientes
-
-Analisando os coefficientes
+Analisando os coeficientes:  
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
@@ -298,26 +294,26 @@ modelopc3
 
 ```
 
-Podemos observar no ModeloPC1;
+Podemos observar no ModeloPC1:
 
-quality <- 100.7 + 0.2366(alcohol) + 0.05542(residualsugar) + 0.0004428(totalsulfurdioxide) + 98.35(density)
-
-R² <- 21,06%
-
-Verificamos então que esse modelopc1 como tentativa de escolher um modelo que explique a variável quality, percebemos estatisticamente que os estimadores para o caso de beta 3 (totalsulfurdioxide) é muito próximo de 0. Assumindo um nível de significância a 5% de probabilidade podemos vê que o P valor de beta 3 (totalsulfurdioxide), é superior ao nível de significância.
-
-Por esses motivos apresentados não a porque colocar totalsulfurdioxide no modelo.
-
-Podemos observar no ModeloPC3;
+quality <- 100.7 + 0.2366(alcohol) + 0.05542(residualsugar) + 0.0004428(totalsulfurdioxide) + 98.35(density)  
+  
+R² <- 21,06%  
+  
+Verificamos então que esse modelopc1 como tentativa de escolher um modelo que explique a variável quality, percebemos estatisticamente que os estimadores para o caso de beta 3 (totalsulfurdioxide) é muito próximo de 0. Assumindo um nível de significância a 5% de probabilidade podemos vê que o P valor de beta 3 (totalsulfurdioxide), é superior ao nível de significância.  
+  
+Por esses motivos apresentados não há por que colocar totalsulfurdioxide no modelo.  
+  
+Podemos observar no ModeloPC3:  
 
 Verificamos então que esse modelopc3 como tentativa de escolher um modelo que explique a variável quality, percebemos
-estatisticamente que os estimadores para o caso de beta 1 (citricacid) é muito próximo de 0. Pelo mesmo motivo apresentado do modelopc1. Não a porque colocar citricacid no modelo.
+estatisticamente que os estimadores para o caso de beta 1 (citricacid) é muito próximo de 0. Pelo mesmo motivo apresentado do modelopc1. não há por que colocar citricacid no modelo.  
 
-quality <- 7.21420 - 0.28680(citricacid) - 1.76242(volatileacidity) - 0.12247(fixedacidity)
-
-R² <- 51,89%
+quality <- 7.21420 - 0.28680(citricacid) - 1.76242(volatileacidity) - 0.12247(fixedacidity)  
+  
+R² <- 51,89%  
  
-Reavaliando Modelos, depois da análise.
+Reavaliando Modelos, depois da análise.  
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
@@ -329,7 +325,7 @@ modelopc3
 
 ```
 
-Podemos perceber agora que R² do modelopc1 é 21,02% e R² do modelopc3 é 51,87%. Por esse motivo escolhemos o modelopc3. Mesmo R² do modelopc3 não sendo muito adequado, foi o melhor que conseguimos, realizando diversos testes.
+Podemos perceber agora que R² do modelopc1 é 21,02% e R² do modelopc3 é 51,87%. Por esse motivo escolhemos o modelopc3. Mesmo R² do modelopc3 não sendo muito adequado, foi o melhor que conseguimos, realizando diversos testes.  
 
 #### Verificar pressuposições
 
@@ -361,19 +357,19 @@ Verificando os residuos do modelo escolhido, nos mostra que pelo teste de normal
 normalidade dos residuos e por consequência, conclui-se que os erros não são normalmente distribuídos
 
 ## Árvore de regressão
-
+  
 Variáveis dependentes: 
-ModeloPC1 <- (quality)
-ModeloPC3 <- (quality)
+ModeloPC1 <- (quality)  
+ModeloPC3 <- (quality)  
 
-Variáveis independentes:
-ModeloPC1 <- (alcohol+residualsugar+density)
-ModeloPC3 <- (volatileacidity+fixedacidity)
-
+Variáveis independentes:  
+ModeloPC1 <- (alcohol+residualsugar+density)  
+ModeloPC3 <- (volatileacidity+fixedacidity)  
+  
 ### Analisando Modelos
-
-Modelo PC1
-
+  
+Modelo PC1  
+  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
 
@@ -399,39 +395,39 @@ sqrt(mse_tree)
 
 ```
 
-Podemos observar no ModeloPC1;
+Podemos observar no ModeloPC1:  
+  
+Porcentagem de importância das variáveis escolhidas:
 
-Porcetangem de importância das variáveis escolhidas
-
-alcohol <- 53%
-density <- 34%
-residualsugar <-13% 
-
-Número de Node criados 63 
-Número de observações 4898
-
-Maiores médias, levando em conta a taxa de cada variável
-
+alcohol <- 53%  
+density <- 34%  
+residualsugar <-13%  
+  
+Número de Node criados 63  
+Número de observações 4898  
+  
+Maiores médias (levando em conta a taxa de cada variável):  
+  
 mean = 6.555556 | 
 residualsugar < 1.75 | 
 density < 0.990005 | 
 alcohol < 13.65 
-
-mean = 6.763948 |
-residualsugar < 2.15 |
-density < 0.98987 |
-alcohol < 12.89667
-
-mean = 6.875 |
-alcohol < 13.55 |
-residualsugar < 2.25 |
-density < 0.98953
-
-
-Percebemos que os vinhos com valor de residualsugar abaixo de 2.5 tem um potencial de qualidade maior, como também os vinhos com valor de density abaixo de 1 e alcohol abaixo de 14 também contribuem para um vinho de maior qualidade. Com tudo um pode equilibrar o outro na dosagem certa.
-
-
-Modelo PC3
+  
+mean = 6.763948 |  
+residualsugar < 2.15 |  
+density < 0.98987 |  
+alcohol < 12.89667  
+  
+mean = 6.875 |  
+alcohol < 13.55 |  
+residualsugar < 2.25 |  
+density < 0.98953  
+  
+  
+Percebemos que os vinhos com valor de residualsugar abaixo de 2.5 tem um potencial de qualidade maior, como também os vinhos com valor de density abaixo de 1 e alcohol abaixo de 14 também contribuem para um vinho de maior qualidade. Com tudo um pode equilibrar o outro na dosagem certa.  
+  
+  
+Modelo PC3  
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
@@ -455,37 +451,37 @@ sqrt(mse_tree)
 
 ```
 
-Podemos observar no ModeloPC3;
-
-Porcetangem de importância das variáveis escolhidas
-
-volatileacidity <- 59%
-fixedacidity <- 41%
-
-Número de Node criados 63 
-Número de observações 4898
-
-Maiores médias, levando em conta a taxa de cada variável
-
-mean = 6.135546 |
-volatileacidity < 0.195 |
-fixedacidity    < 6.175
-
-mean = 6.213192 |
-fixedacidity < 7.45 |
-volatileacidity < 0.1325
-
-mean = 6.294643 |
-volatileacidity < 0.525 |
-fixedacidity < 5.35
-
+Podemos observar no ModeloPC3:  
+  
+Porcentagem de importância das variáveis escolhidas:
+  
+volatileacidity <- 59%  
+fixedacidity <- 41%  
+  
+Número de Node criados 63  
+Número de observações 4898  
+  
+Maiores médias (levando em conta a taxa de cada variável):  
+  
+mean = 6.135546 |  
+volatileacidity < 0.195 |  
+fixedacidity    < 6.175  
+  
+mean = 6.213192 |  
+fixedacidity < 7.45 |  
+volatileacidity < 0.1325  
+  
+mean = 6.294643 |  
+volatileacidity < 0.525 |  
+fixedacidity < 5.35  
+  
 Percebemos que os vinhos com valor de volatileacidity abaixo de 0.1300 tem um potencial de qualidade maior, como também os vinhos com valor de fixedacidity abaixo de 7.45 também contribuem para um vinho de maior qualidade. Com tudo um pode equilibrar o outro na dosagem certa.
 
 ## Resumo Regressão linear / Árvore de Regressão
 
-Com base nas duas técnicas conseguimos enxergar alguns componentes que elevaram o padrão de qualidade do vinho, com alguns diferenciais para cada uma. A técnica de regressão linear parece ser mais segura em mostrar que os componentes citricacid, volatileaciditye e fixedacidity são os causadores de uma maior qualidade do vinho. Já a técnica de árvore de regressão mostra de uma forma mais transparente e fácil de enxergar que a qualidade do vinho é mais elevada por causa dos componentes residualsugar, density e alcohol. Ou seja o modelo pc3 se mostrou mais adequado na regressão linear, e o modelo pc1 se mostrou mais adequado na árvore de regressão.
-
-No contexto geral o modelo PC1 mostrou os melhores resultados, usando a Árvore de Regressão.
+Com base nas duas técnicas conseguimos enxergar alguns componentes que elevaram o padrão de qualidade do vinho, com alguns diferenciais para cada uma. A técnica de regressão linear parece ser mais segura em mostrar que os componentes citricacid, volatileaciditye e fixedacidity são os causadores de uma maior qualidade do vinho. Já a técnica de árvore de regressão mostra de uma forma mais transparente e fácil de enxergar que a qualidade do vinho é mais elevada por causa dos componentes residualsugar, density e alcohol. Ou seja o modelo pc3 se mostrou mais adequado na regressão linear, e o modelo pc1 se mostrou mais adequado na árvore de regressão.  
+  
+No contexto geral o modelo PC1 mostrou os melhores resultados, usando a Árvore de Regressão.  
 
 # Parte III
 ## Regressão Logística
