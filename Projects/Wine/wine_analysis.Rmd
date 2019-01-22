@@ -22,6 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Parte I
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(caret)
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -332,6 +333,8 @@ white_pcomp <- prcomp(white_dsetX, center = TRUE,scale = TRUE)
 trainData2 <- trainData[,12]
 # white_pcomp foi calculado na sessao de componentes principais
 trainData2 <- cbind(trainData2,data.frame(white_pcomp$x))
+testData2 <- testData[,12]
+testData2 <- cbind(trainData2,data.frame(white_pcomp$x))
 colnames(trainData2)[1] <- "quality"
 
 modeloCP <- lm(quality ~., data = trainData2)
@@ -347,160 +350,92 @@ Do *modeloCP2* acima:
   
 __Variáveis dependentes:__ quality  
 __Variáveis independentes:__ PC1+PC2+PC3+PC4+PC6+PC8+PC9+PC10+PC11  
+
+Nota-se no modelo que a melhora no valor de R² é pouco significativa se comparado com os modelos anteriores, por isso, descartaremos este modelo.  
   
 ### Testando os modelos
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-errorRate4 <- sigma(modelo4)/mean(testData$quality)
-paste0("Modelo4: ",round(errorRate4*100,digits = 2),"% de taxa de erro")
+predicted4 <- predict(modelo4, testData)
+paste0("Modelo4: ",round(mean(predicted4 == testData$quality)*100, digits = 2),"% de acurácia")
+```
+Como o modelo retorna valores contínuos, há discrepância nos valores preditos dos valores reais em questão das casas decimais. Arrendondaremos então os valores preditos:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predicted4 <- round(predicted4, digits = 0)
+paste0("Modelo4: ",round(mean(predicted4 == testData$quality)*100,digits = 2),"% de acurácia")
 
-errorRate6 <- sigma(modelo6)/mean(testData$quality)
-paste0("Modelo6: ",round(errorRate6*100, digits = 2),"% de taxa de erro")
+predicted6 <- predict(modelo6, testData)
+predicted6 <- round(predicted6, digits = 0)
+paste0("Modelo6: ",round(mean(predicted6 == testData$quality)*100,digits = 2),"% de acurácia")
 
-errorRateCP2 <- sigma(modeloCP2)/mean(testData$quality)
-paste0("ModeloCP2: ", round(errorRateCP2*100, digits = 2),"% de taxa de erro")
-
+# Calcular Componentes Principais pra testData ???
+# predictedCP2 <- predict(modeloCP2, testData2)
+# predictedCP2 <- round(predictedCP2, digits = 0)
+# paste0("ModeloCP2: ",round(mean(predictedCP2 == testData2$quality)*100,digits = 2),"% de acurácia")
 ```
 
-Os modelos *modelo4*, *modelo6* e *modeloCP2* apresentam um R² e taxa de erro muito parecidos, demonstrando que a eficácia deles pra explicar a variância dos dados é muito próxima. Levando isso em conta, __o modelo indicado é o *modelo4* por trabalhar com menos variáveis evitando assim o uso de informações redundantes.__
+Os modelos *modelo4* e  *modelo6* apresentam um R² e taxa de erro muito parecidos, demonstrando que a eficácia deles pra explicar a variância dos dados é muito próxima. Os valores preditos no dataset de teste apresentou uma acurácia de aprox. 50% para ambos modelos. Levando tudo isso em conta, __o modelo indicado é o *modelo4* por trabalhar com menos variáveis evitando assim o uso de informações redundantes.__
 
 ## Árvore de regressão
-  
-Variáveis dependentes: 
-ModeloPC1 <- (quality)  
-ModeloPC3 <- (quality)  
-
-Variáveis independentes:  
-ModeloPC1 <- (alcohol+residualsugar+density)  
-ModeloPC3 <- (volatileacidity+fixedacidity)  
-  
-### Analisando Modelos
-  
-Modelo PC1  
-  
+O algoritmo para a árvore de regressão é bem parecido da regressão linear:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-vinhos_brancos <- wine_dset %>% filter(Vinho == 'WHITE')
-vinhos_brancos <- vinhos_brancos[2:13]
-
-attach(vinhos_brancos)
-
-modelopc1 <- rpart (quality ~ alcohol+residualsugar+density, data=vinhos_brancos, 
-                     cp = 0.001,minsplit = 2,maxdepth=5)
-
-# summary(modelopc1)
-
-rpart.plot(modelopc1, type=2, extra="auto", under=FALSE, clip.right.labs=TRUE,
-           fallen.leaves=TRUE,   digits=2, varlen=-3, faclen=15,
-           cex=NULL, tweak=1.7,
-           compress=TRUE,box.palette="auto",
-           snip=FALSE)
-
-Val_pred_tree <- predict(modelopc1,interval = "prediction", level = 0.95) 
-str(Val_pred_tree)
-
-
-mse_tree <- mean((quality - Val_pred_tree)^2)
-sqrt(mse_tree)
-
-
-
+modeloBackTree <- rpart(quality ~., data = trainData)
+modeloBackTree
+rpart.plot(modeloBackTree)
 ```
+Do *modeloBackTree* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ todas as outras  
 
-Podemos observar no ModeloPC1:  
-  
-Porcentagem de importância das variáveis escolhidas:
-
-alcohol <- 53%  
-density <- 34%  
-residualsugar <-13%  
-  
-Número de Node criados 63  
-Número de observações 4898  
-  
-Maiores médias (levando em conta a taxa de cada variável):  
-  
-mean = 6.555556 | 
-residualsugar < 1.75 | 
-density < 0.990005 | 
-alcohol < 13.65 
-  
-mean = 6.763948 |  
-residualsugar < 2.15 |  
-density < 0.98987 |  
-alcohol < 12.89667  
-  
-mean = 6.875 |  
-alcohol < 13.55 |  
-residualsugar < 2.25 |  
-density < 0.98953  
-  
-  
-Percebemos que os vinhos com valor de residualsugar abaixo de 2.5 tem um potencial de qualidade maior, como também os vinhos com valor de density abaixo de 1 e alcohol abaixo de 14 também contribuem para um vinho de maior qualidade. Com tudo um pode equilibrar o outro na dosagem certa.  
-  
-  
-Modelo PC3  
-
+Achando o melhor coeficiente de complexidade:
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-
-modelopc3 <- rpart (quality ~ volatileacidity+fixedacidity, data=vinhos_brancos, 
-                     cp = 0.001,minsplit = 2,maxdepth=5)
-
-# summary(modelopc3)
-
-rpart.plot(modelopc3, type=2, extra="auto", under=FALSE, clip.right.labs=TRUE,
-           fallen.leaves=TRUE,   digits=2, varlen=-3, faclen=15,
-           cex=NULL, tweak=1.7,
-           compress=TRUE,box.palette="auto",
-           snip=FALSE)
-
-Val_pred_tree2 <- predict(modelopc3,interval = "prediction", level = 0.95) 
-str(Val_pred_tree)
-
-mse_tree <- mean((quality - Val_pred_tree2)^2)
-sqrt(mse_tree)
-
+printcp(modeloBackTree)
 ```
+O valor de CP para a menor taxa de erro de cross-validation:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"]
+```
+"Podando" a árvore com o melhor valor de CP:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ptree <- prune(modeloBackTree, cp = modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"])
+rpart.plot(ptree)
+```
+Usando as mesmas variáveis do modelo4:
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modeloBackTree4 <- rpart(quality ~volatileacidity+residualsugar+density+alcohol, data = trainData, cp = 0.01)
+modeloBackTree4
+rpart.plot(modeloBackTree4)
+```
+Do *modeloBackTree4* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ volatileacidity+residualsugar+density+alcohol  
+  
+### Testando os modelos
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predictBackTree <- predict(modeloBackTree, testData)
+paste0("modeloBackTree: ",round(mean(predictBackTree == testData$quality)*100, digits = 2),"% de acurácia")
+predictBackTree <- round(predictBackTree, digits = 0)
+paste0("modeloBackTree: ",round(mean(predictBackTree == testData$quality)*100,digits = 2),"% de acurácia")
 
-Podemos observar no ModeloPC3:  
+predictBackTree4 <- predict(modeloBackTree4, testData)
+predictBackTree4 <- round(predictBackTree4, digits = 0)
+paste0("modeloBackTree4: ",round(mean(predictBackTree4 == testData$quality)*100,digits = 2),"% de acurácia")
+```
   
-Porcentagem de importância das variáveis escolhidas:
-  
-volatileacidity <- 59%  
-fixedacidity <- 41%  
-  
-Número de Node criados 63  
-Número de observações 4898  
-  
-Maiores médias (levando em conta a taxa de cada variável):  
-  
-mean = 6.135546 |  
-volatileacidity < 0.195 |  
-fixedacidity    < 6.175  
-  
-mean = 6.213192 |  
-fixedacidity < 7.45 |  
-volatileacidity < 0.1325  
-  
-mean = 6.294643 |  
-volatileacidity < 0.525 |  
-fixedacidity < 5.35  
-  
-Percebemos que os vinhos com valor de volatileacidity abaixo de 0.1300 tem um potencial de qualidade maior, como também os vinhos com valor de fixedacidity abaixo de 7.45 também contribuem para um vinho de maior qualidade. Com tudo um pode equilibrar o outro na dosagem certa.
+## Conclusão: regressão linear e árvore de regressão
 
-## Resumo Regressão linear / Árvore de Regressão
-
-Com base nas duas técnicas conseguimos enxergar alguns componentes que elevaram o padrão de qualidade do vinho, com alguns diferenciais para cada uma. A técnica de regressão linear parece ser mais segura em mostrar que os componentes citricacid, volatileaciditye e fixedacidity são os causadores de uma maior qualidade do vinho. Já a técnica de árvore de regressão mostra de uma forma mais transparente e fácil de enxergar que a qualidade do vinho é mais elevada por causa dos componentes residualsugar, density e alcohol. Ou seja o modelo pc3 se mostrou mais adequado na regressão linear, e o modelo pc1 se mostrou mais adequado na árvore de regressão.  
+Os dois modelos, por apresentarem valores contínuos não inteiros como predição, não se saíram bem para prever a qualidade dos vinhos com precisão. Neste caso seria melhor trabalhar com modelos qualitativos que possam traduzir faixas de valores em qualidade, possibilitando assim a construção de um modelo mais eficaz. Portanto, a próxima parte tratará desses modelos qualitativos: modelo de regressão logística e árvore de decisão.        
   
-No contexto geral o modelo PC1 mostrou os melhores resultados, usando a Árvore de Regressão.  
-
+  
 # Parte III
 ## Regressão Logística
 Para aplicarmor uma regressão logistica decidimos categorizar a qualidade dos vinhos em dois tipos, Vinhos Bons com uma qualidade igual ou superior a 7, ou vinhos ruins com uma pontuação de qualidade inferior a 7.
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 summary(wine_white_dset$quality)
 ```
-A razão de escolhermos 7 como nota divisora de vinhos bons e ruins é porquie a média da qualidade dos vinhos é de aproximandamente 6 e menos de um quarto dos vinhos brancos estão com nota 7 ou acima. Decidimos por categorizar como vinhos bons aqules que tem uma avaliação de qualidade acima da média.
+A razão de escolhermos 7 como nota divisora de vinhos bons e ruins é porque a média da qualidade dos vinhos é de aproximandamente 6 e menos de um quarto dos vinhos brancos estão com nota 7 ou acima. Decidimos por categorizar como vinhos bons aqules que tem uma avaliação de qualidade acima da média.
 Assim podemos rodar uma regressão logistica com as variaveis usadas anteriormente para analisarmos se o modelo gerado é aceitável.
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_white_dset <- wine_dset %>%
