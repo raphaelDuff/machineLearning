@@ -34,7 +34,7 @@ library(rpart.plot)
 wine_dset <- read.csv2('BaseWine_Red_e_White2018.csv')
 ```
   
-## Descrição de dados
+## Descrição dos dados
   
 Para começar nossa análise vamos identificar as variáveis para entender o que elas podem significar no contexto da composição de um vinho. 
 
@@ -269,6 +269,11 @@ testData  <- wine_white_dset[-treino,]
 modeloBackWard <- lm(quality ~., data = trainData)
 summary(modeloBackWard)
 ```
+Do *modeloBackWard* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ todas as outras  
+ 
 Os valores com asterisco são aqueles mais correlacionados com a variável *quality*. A coluna *Pr(>|t|)* mostra o Teste T de Student, portanto, valores abaixo do p value igual a 0,05 são relevantes para a análise de acordo com a taxa escolhida (p = 5%).
 Como a maioria das variáveis possuem asterisco, iremos utilizar duas abordagens pra encontrar o melhor modelo usando menos variáveis para evitar informações redundantes:
 
@@ -293,6 +298,11 @@ modelo4 <- lm(quality ~volatileacidity+residualsugar+density+alcohol,
                      data = trainData)
 summary(modelo4)
 ```
+Do *modelo4* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ volatileacidity+residualsugar+density+alcohol  
+
 O valor R² ainda é muito baixo para o modelo, 25,97%. Esse valor significa que o modelo explica somente a variação desta porcentagem dos dados do modelo.  
   
 E com 6 variáveis?  
@@ -302,7 +312,11 @@ modelo6 <- lm(quality ~fixedacidity+volatileacidity+residualsugar+density+pH+sul
                      data = trainData)
 summary(modelo6)
 ```
-
+Do *modelo6* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ volatileacidity+residualsugar+density+alcohol  
+  
 O valor R² agora é de  27,65%, ou seja, o ganho na qualidade do modelo ao adicionar mais duas variáveis foi pouco significativo, portanto, __estes modelos de regressão linear não são adequados pra predição da qualidade.__  
   
 Tentaremos agora usar regressão linear com os componentes principais para aumentar R².  
@@ -322,95 +336,33 @@ colnames(trainData2)[1] <- "quality"
 
 modeloCP <- lm(quality ~., data = trainData2)
 summary(modeloCP)
-
 ```
+Excluindo o *PC5* e o *PC7* do modelo por apresentarem um elevado *Pr(>|t|)*:  
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-vinhos_brancos <- wine_dset %>% filter(Vinho == 'WHITE')
-vinhos_brancos <- vinhos_brancos[2:13]
-# Vinhos2 <- vinhos_brancos %>%
-#   mutate(pc1 = acpcor$x[, 1]) %>%
-#   mutate(pc2 = acpcor$x[, 2]) %>%
-#   mutate(pc3 = acpcor$x[, 3]) %>%
-#   mutate(pc4 = acpcor$x[, 4]) 
+modeloCP2 <- lm(quality ~PC1+PC2+PC3+PC4+PC6+PC8+PC9+PC10+PC11, data = trainData2)
+summary(modeloCP2)
 ```
-#### Analisando os coeficientes
-
-Analisando os coeficientes:  
+Do *modeloCP2* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ PC1+PC2+PC3+PC4+PC6+PC8+PC9+PC10+PC11  
+  
+### Testando os modelos
 
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
+errorRate4 <- sigma(modelo4)/mean(testData$quality)
+paste0("Modelo4: ",round(errorRate4*100,digits = 2),"% de taxa de erro")
 
-attach(vinhos_brancos)
+errorRate6 <- sigma(modelo6)/mean(testData$quality)
+paste0("Modelo6: ",round(errorRate6*100, digits = 2),"% de taxa de erro")
 
-modelopc1 <- summary(lm(quality ~ alcohol+residualsugar+totalsulfurdioxide+density))
-modelopc1
-
-modelopc3 <- summary(lm(quality ~ citricacid+volatileacidity+fixedacidity))
-modelopc3
-
-```
-
-Podemos observar no ModeloPC1:
-
-quality <- 100.7 + 0.2366(alcohol) + 0.05542(residualsugar) + 0.0004428(totalsulfurdioxide) + 98.35(density)  
-  
-R² <- 21,06%  
-  
-Verificamos então que esse modelopc1 como tentativa de escolher um modelo que explique a variável quality, percebemos estatisticamente que os estimadores para o caso de beta 3 (totalsulfurdioxide) é muito próximo de 0. Assumindo um nível de significância a 5% de probabilidade podemos vê que o P valor de beta 3 (totalsulfurdioxide), é superior ao nível de significância.  
-  
-Por esses motivos apresentados não há por que colocar totalsulfurdioxide no modelo.  
-  
-Podemos observar no ModeloPC3:  
-
-Verificamos então que esse modelopc3 como tentativa de escolher um modelo que explique a variável quality, percebemos
-estatisticamente que os estimadores para o caso de beta 1 (citricacid) é muito próximo de 0. Pelo mesmo motivo apresentado do modelopc1. não há por que colocar citricacid no modelo.  
-
-quality <- 7.21420 - 0.28680(citricacid) - 1.76242(volatileacidity) - 0.12247(fixedacidity)  
-  
-R² <- 51,89%  
- 
-Reavaliando Modelos, depois da análise.  
-
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-modelopc1 <- summary(lm(quality ~ alcohol+residualsugar+density))
-modelopc1
-
-modelopc3 <- summary(lm(quality ~ volatileacidity+fixedacidity))
-modelopc3
+errorRateCP2 <- sigma(modeloCP2)/mean(testData$quality)
+paste0("ModeloCP2: ", round(errorRateCP2*100, digits = 2),"% de taxa de erro")
 
 ```
 
-Podemos perceber agora que R² do modelopc1 é 21,02% e R² do modelopc3 é 51,87%. Por esse motivo escolhemos o modelopc3. Mesmo R² do modelopc3 não sendo muito adequado, foi o melhor que conseguimos, realizando diversos testes.  
-
-#### Verificar pressuposições
-
-##### Residuos
-
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-res <- rstandard(lm(quality ~ volatileacidity+fixedacidity))
-
-modelo_fim <- lm(quality ~ volatileacidity+fixedacidity)
-
-plot(predict(modelo_fim), res, xlab = "Preditor linear",ylab = "Residuos")
-abline(h = 0, lty = 2)
-
-
-qqnorm(residuals(modelo_fim), ylab="Residuos",xlab="Quantis teóricos",main="")
-qqline(residuals(modelo_fim))
-```
-
-##### Teste de normalidade(Shapiro-Wilk)
-
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-shapiro.test(res)
-
-```
-
-Verificando os residuos do modelo escolhido, nos mostra que pelo teste de normalidade utilizando a estatística do teste e obtendo o resultado de 0.97168 e o p valor de 2.2e-16. O valor de P do teste é pequeno por isso rejeita-se a hipótese de
-normalidade dos residuos e por consequência, conclui-se que os erros não são normalmente distribuídos
+Os modelos *modelo4*, *modelo6* e *modeloCP2* apresentam um R² e taxa de erro muito parecidos, demonstrando que a eficácia deles pra explicar a variância dos dados é muito próxima. Levando isso em conta, __o modelo indicado é o *modelo4* por trabalhar com menos variáveis evitando assim o uso de informações redundantes.__
 
 ## Árvore de regressão
   
@@ -427,12 +379,15 @@ ModeloPC3 <- (volatileacidity+fixedacidity)
 Modelo PC1  
   
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
+vinhos_brancos <- wine_dset %>% filter(Vinho == 'WHITE')
+vinhos_brancos <- vinhos_brancos[2:13]
 
+attach(vinhos_brancos)
 
 modelopc1 <- rpart (quality ~ alcohol+residualsugar+density, data=vinhos_brancos, 
                      cp = 0.001,minsplit = 2,maxdepth=5)
 
-summary(modelopc1)
+# summary(modelopc1)
 
 rpart.plot(modelopc1, type=2, extra="auto", under=FALSE, clip.right.labs=TRUE,
            fallen.leaves=TRUE,   digits=2, varlen=-3, faclen=15,
@@ -491,7 +446,7 @@ Modelo PC3
 modelopc3 <- rpart (quality ~ volatileacidity+fixedacidity, data=vinhos_brancos, 
                      cp = 0.001,minsplit = 2,maxdepth=5)
 
-summary(modelopc3)
+# summary(modelopc3)
 
 rpart.plot(modelopc3, type=2, extra="auto", under=FALSE, clip.right.labs=TRUE,
            fallen.leaves=TRUE,   digits=2, varlen=-3, faclen=15,
@@ -589,8 +544,8 @@ show(ACC)
 Aqui podemos ver a matriz de confusão, onde há 326 falsos positivos e 249 falsos negativos, com um total de 35% de acurácia. Esse modelo é melhor identificando os vinhos ruins, do que os bons, mas mesmo assim não consegue um resultado muito satisfatório.
 
 
-## Arvore de Decisão
-Vamos tentar com a arvore de decisão, usando as mesmas variáveis:
+## Árvore de Decisão
+Vamos tentar com a árvore de decisão, usando as mesmas variáveis:
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 modelo_tree <- rpart (quality_cat ~ alcohol+residualsugar+density, data=trainData, cp = 0.006,minsplit = 150,maxdepth=10)
 
@@ -602,7 +557,7 @@ rpart.plot(modelo_tree, type=4, extra=104, under=FALSE, clip.right.labs=TRUE,
            snip=FALSE)
 
 ```
-Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa arvore:
+Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa árvore:
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 pred_class <- predict(modelo_tree ,testData , type = "class")
 
@@ -613,12 +568,14 @@ diagonal <- diag(Campanha.matriz.de.confusao)
 perc.erro <- 1 - sum(diagonal)/sum(Campanha.matriz.de.confusao)
 perc.erro
 ```
-A arvore de decisão com essas variáveis obtem apenas 19% de acurácia, muito abaixo da regressão logistica.
+A árvore de decisão com essas variáveis obtem apenas 19% de acurácia, muito abaixo da regressão logistica.  
+  
+  
 # Parte IV
 
 <!-- a) quais outras técnicas supervisionadas vocês indicariam como adequadas
 para esta análise? -->
-
+  
 ## Técnicas supervisionadas que poderiam ser usadas
 
 ### Gaussian Naive Bayes
