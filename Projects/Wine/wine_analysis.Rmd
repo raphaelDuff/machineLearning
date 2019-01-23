@@ -14,6 +14,7 @@ output:
     number_sections: yes
     toc: yes
     code_folding: hide
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
