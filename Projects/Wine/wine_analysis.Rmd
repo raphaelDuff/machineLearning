@@ -24,6 +24,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 library(caret)
 library(data.table)
+library(e1071)
 library(dplyr)
 library(ggplot2)
 library(grid)
@@ -200,16 +201,38 @@ wine_dset %>%
   
 Embora os vinhos de maior qualidade apresentam um baixo valor de dióxido de enxofre livre, a relação dos outros valores com qualidade se mostrou insuficiente para determinar se o vinho é bom ou não, ou seja, outras características correlacionadas com o dióxido de enxofre livre devem explicar melhor a qualidade.  
 
-### Correlação
-```{r echo=TRUE, warning=FALSE, message=FALSE}
+### Remoção de outliers
+Com os histogramas foi possível identificar também a existência de outliers nos dados pois há pontos que estão acima do limite da _upper fence_ ou abaixo da _lower fence_. Esses limites (lower e upper) são calculados utilizando a seguinte relação:
 
+___Upper fence___:
+
+upper_fence = 3º Quartil + 1,5 * Amplitude inter-quartil
+
+___Lower fence___:
+
+lower_fence = 1º Quartil - 1,5 * Amplitude inter-quartil
+
+Para evitar que esses outliers influenciem em nossos modelos,usaremos uma abordagem mais conservadora para não remover tantos dados que considera __outliers valores absolutos maiores que (média + ( 3 * desvio padrão)):__   
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
 wine_white_dset <- wine_white_dset %>% 
   select(-c(Vinho, id_vinho))
 
+for (col in colnames(wine_white_dset)[1:11]) {
+  sd3 <- 3*sd(wine_white_dset[,col])
+  idx <- which(wine_white_dset[,col] > mean(wine_white_dset[,col]) + sd3 | wine_white_dset[,col] < mean(wine_white_dset[,col]) - sd3)
+  for (x in idx) {
+    wine_white_dset[x,col] <- NA
+  }
+}
+
+wine_white_dset <- na.omit(wine_white_dset)
+```
+  
+### Correlação
+```{r echo=TRUE, warning=FALSE, message=FALSE}
 whitedset_cor <- cor(wine_white_dset)
-
 corrplot::corrplot(whitedset_cor, method="circle", order="hclust")
-
 ```
   
 Pela matriz de correlação é perceptível como algumas variáveis se correlacionam mais com o restante do dataset do que as outras, são elas: *density*, *totalsufurdioxide*,  *freesufurdioxide*  e *alcohol*.
@@ -223,33 +246,6 @@ white_dsetX <- wine_white_dset[,-12]
 white_pcomp <- prcomp(white_dsetX, center = TRUE,scale = TRUE)
 summary(white_pcomp)
 plot(white_pcomp, type = 'l', main = "Componentes Principais")
-```
-<!-- ### Remoção de outliers  -->
-<!-- Com os histogramas foi possível identificar também a existência de outliers nos dados pois há pontos que estão acima do limite da _upper fence_ ou abaixo da _lower fence_. Esses limites (lower e upper) são calculados utilizando a seguinte relação:   -->
-
-<!-- ___Upper fence___:   -->
-
-<!-- upper_fence = 3º Quartil + 1,5 * Amplitude inter-quartil -->
-
-<!-- ___Lower fence___:   -->
-
-<!-- lower_fence = 1º Quartil - 1,5 * Amplitude inter-quartil -->
-
-<!-- Para evitar que esses outliers influenciem em nossos modelos, vamos substituí-los por *NA*:   -->
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-# quality_column <- wine_white_dset[,12]
-# 
-# for (col in colnames(white_dsetX)) {
-#   upper_fence <- quantile(white_dsetX[,col], 0.75, names = FALSE) +(1.5 * IQR(white_dsetX[,col]))
-#   lower_fence <- quantile(white_dsetX[,col],0.25, names = FALSE) - (1.5 * IQR(white_dsetX[,col]))
-#   
-#   idx <- which(white_dsetX[,col] < lower_fence | white_dsetX[,col] > upper_fence)
-#   for (x in idx) {
-#     white_dsetX[x,col] <- NA
-#   }
-# }
-# 
-# wine_white_dset <- mutate(white_dsetX,quality = quality_column)
 ```
   
   
@@ -290,21 +286,22 @@ library(car)
 library(leaps)
 
 leaps <- regsubsets(quality~., data = trainData, nbest = 2, method = "exhaustive")
-subsets(leaps, statistic = "bic", legend = FALSE, ylim=c(-1040,-940), xlim=c(2,6.3))
+subsets(leaps, statistic = "bic", legend = FALSE, ylim=c(-950,-800), xlim=c(2,6.3))
 ```
-Usando somente 4 variáveis pra construir o modelo de regressão linear da qualidade, o gráfico acima mostra que a melhor escolha é a combinação *volatileacidity+residualsugar+density+alcohol* por ter o menor valor do critério de informação bayesiano (BIC). A ideia de pegar 4 variáveis é pra selecionar um número reduzido de itens pra construir o modelo, desta forma no mundo real nós conseguiríamos fazer um controle de qualidade usando testes químicos com menos substâncias, o que depreciaria o custo do processo.  
+Usando somente 4 variáveis pra construir o modelo de regressão linear da qualidade, o gráfico acima mostra que a melhor escolha é a combinação *volatileacidity+residualsugar+freesulfurdioxide+alcohol* por ter o menor valor do critério de informação bayesiano (BIC). A ideia de pegar 4 variáveis é pra selecionar um número reduzido de itens pra construir o modelo, desta forma no mundo real nós conseguiríamos fazer um controle de qualidade usando testes químicos com menos substâncias, o que depreciaria o custo do processo.  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 
-modelo4 <- lm(quality ~volatileacidity+residualsugar+density+alcohol,
+modelo4 <- lm(quality ~volatileacidity+residualsugar+freesulfurdioxide+alcohol,
                      data = trainData)
 summary(modelo4)
 ```
 Do *modelo4* acima:  
   
 __Variáveis dependentes:__ quality  
-__Variáveis independentes:__ volatileacidity+residualsugar+density+alcohol  
-
-O valor R² ainda é muito baixo para o modelo, 25,97%. Esse valor significa que o modelo explica somente a variação desta porcentagem dos dados do modelo.  
+__Variáveis independentes:__ volatileacidity+residualsugar+freesulfurdioxide+alcohol  
+__R²:__ 25,21%  
+  
+O valor R² ainda é muito baixo para o modelo, 25,21%. Esse valor significa que o modelo explica somente a variação desta porcentagem dos dados do modelo.  
   
 E com 6 variáveis?  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -316,14 +313,15 @@ summary(modelo6)
 Do *modelo6* acima:  
   
 __Variáveis dependentes:__ quality  
-__Variáveis independentes:__ volatileacidity+residualsugar+density+alcohol  
+__Variáveis independentes:__ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates  
+__R²:__ 26,64%  
   
-O valor R² agora é de  27,65%, ou seja, o ganho na qualidade do modelo ao adicionar mais duas variáveis foi pouco significativo, portanto, __estes modelos de regressão linear não são adequados pra predição da qualidade.__  
+O valor R² agora é de  26,64%, ou seja, o ganho na qualidade do modelo ao adicionar mais duas variáveis foi pouco significativo, portanto, __estes modelos de regressão linear não são adequados pra predição da qualidade.__  
   
 Tentaremos agora usar regressão linear com os componentes principais para aumentar R².  
   
-### Componentes principais com regressão linear
-
+### Componentes principais com regressão linear  
+  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 # Removendo a variavel quality e criando variavel com componentes principais para teste dset
 white_dsetX <- trainData[,-12]
@@ -340,42 +338,22 @@ colnames(trainData2)[1] <- "quality"
 modeloCP <- lm(quality ~., data = trainData2)
 summary(modeloCP)
 ```
-Excluindo o *PC5* e o *PC7* do modelo por apresentarem um elevado *Pr(>|t|)*:  
-
+Excluindo o *PC2* e o *PC8* do modelo por apresentarem um elevado *Pr(>|t|)*:  
+  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-modeloCP2 <- lm(quality ~PC1+PC2+PC3+PC4+PC6+PC8+PC9+PC10+PC11, data = trainData2)
+modeloCP2 <- lm(quality ~PC1+PC3+PC4+PC5+PC6+PC7+PC9+PC10+PC11, data = trainData2)
 summary(modeloCP2)
 ```
 Do *modeloCP2* acima:  
   
 __Variáveis dependentes:__ quality  
-__Variáveis independentes:__ PC1+PC2+PC3+PC4+PC6+PC8+PC9+PC10+PC11  
-
-Nota-se no modelo que a melhora no valor de R² é pouco significativa se comparado com os modelos anteriores, por isso, descartaremos este modelo.  
+__Variáveis independentes:__ PC1+PC3+PC4+PC5+PC6+PC7+PC9+PC10+PC11  
+__R²:__ 27,77%  
   
-### Testando os modelos
-
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-predicted4 <- predict(modelo4, testData)
-paste0("Modelo4: ",round(mean(predicted4 == testData$quality)*100, digits = 2),"% de acurácia")
-```
-Como o modelo retorna valores contínuos, há discrepância nos valores preditos dos valores reais em questão das casas decimais. Arrendondaremos então os valores preditos:  
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-predicted4 <- round(predicted4, digits = 0)
-paste0("Modelo4: ",round(mean(predicted4 == testData$quality)*100,digits = 2),"% de acurácia")
-
-predicted6 <- predict(modelo6, testData)
-predicted6 <- round(predicted6, digits = 0)
-paste0("Modelo6: ",round(mean(predicted6 == testData$quality)*100,digits = 2),"% de acurácia")
-
-# Calcular Componentes Principais pra testData ???
-# predictedCP2 <- predict(modeloCP2, testData2)
-# predictedCP2 <- round(predictedCP2, digits = 0)
-# paste0("ModeloCP2: ",round(mean(predictedCP2 == testData2$quality)*100,digits = 2),"% de acurácia")
-```
-
-Os modelos *modelo4* e  *modelo6* apresentam um R² e taxa de erro muito parecidos, demonstrando que a eficácia deles pra explicar a variância dos dados é muito próxima. Os valores preditos no dataset de teste apresentou uma acurácia de aprox. 50% para ambos modelos. Levando tudo isso em conta, __o modelo indicado é o *modelo4* por trabalhar com menos variáveis evitando assim o uso de informações redundantes.__
-
+### Testando os modelos  
+  
+Os modelos *modelo4* e  *modelo6* apresentam um R² e taxa de erro muito parecidos, demonstrando que a eficácia deles pra explicar a variância dos dados é muito próxima. Levando tudo isso em conta, __o modelo indicado é o *modelo4* por trabalhar com menos variáveis evitando assim o uso de informações redundantes.__
+  
 ## Árvore de regressão
 O algoritmo para a árvore de regressão é bem parecido da regressão linear:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -387,60 +365,46 @@ Do *modeloBackTree* acima:
   
 __Variáveis dependentes:__ quality  
 __Variáveis independentes:__ todas as outras  
-
-Achando o melhor coeficiente de complexidade:
+  
+Achando o melhor coeficiente de complexidade:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 printcp(modeloBackTree)
 ```
-O valor de CP para a menor taxa de erro de cross-validation:
+O valor de CP para a menor taxa de erro de cross-validation:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"]
 ```
-"Podando" a árvore com o melhor valor de CP:
+"Podando" a árvore com o melhor valor de CP:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 ptree <- prune(modeloBackTree, cp = modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"])
 rpart.plot(ptree)
 ```
-Usando as mesmas variáveis do modelo4:
+Usando as mesmas variáveis do modelo4:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-modeloBackTree4 <- rpart(quality ~volatileacidity+residualsugar+density+alcohol, data = trainData, cp = 0.01)
+modeloBackTree4 <- rpart(quality ~volatileacidity+residualsugar+freesulfurdioxide+alcohol, data = trainData, cp = 0.01)
 modeloBackTree4
 rpart.plot(modeloBackTree4)
 ```
 Do *modeloBackTree4* acima:  
   
 __Variáveis dependentes:__ quality  
-__Variáveis independentes:__ volatileacidity+residualsugar+density+alcohol  
+__Variáveis independentes:__ volatileacidity+residualsugar+freesulfurdioxide+alcohol  
   
-### Testando os modelos
-```{r echo=TRUE, warning=FALSE, message=FALSE}
-predictBackTree <- predict(modeloBackTree, testData)
-paste0("modeloBackTree: ",round(mean(predictBackTree == testData$quality)*100, digits = 2),"% de acurácia")
-predictBackTree <- round(predictBackTree, digits = 0)
-paste0("modeloBackTree: ",round(mean(predictBackTree == testData$quality)*100,digits = 2),"% de acurácia")
-
-predictBackTree4 <- predict(modeloBackTree4, testData)
-predictBackTree4 <- round(predictBackTree4, digits = 0)
-paste0("modeloBackTree4: ",round(mean(predictBackTree4 == testData$quality)*100,digits = 2),"% de acurácia")
-```
+### Conclusão: regressão linear e árvore de regressão  
   
-## Conclusão: regressão linear e árvore de regressão
-
 Os dois modelos, por apresentarem valores contínuos não inteiros como predição, não se saíram bem para prever a qualidade dos vinhos com precisão. Neste caso seria melhor trabalhar com modelos qualitativos que possam traduzir faixas de valores em qualidade, possibilitando assim a construção de um modelo mais eficaz. Portanto, a próxima parte tratará desses modelos qualitativos: modelo de regressão logística e árvore de decisão.        
   
   
-# Parte III
-## Regressão Logística
-Para aplicarmor uma regressão logistica decidimos categorizar a qualidade dos vinhos em dois tipos, Vinhos Bons com uma qualidade igual ou superior a 7, ou vinhos ruins com uma pontuação de qualidade inferior a 7.
+# Parte III  
+## Regressão Logística  
+Para aplicarmor uma regressão logistica decidimos categorizar a qualidade dos vinhos em dois tipos, vinhos "Bons" com uma qualidade igual ou superior a 7, ou vinhos "Ruins"" com uma pontuação de qualidade inferior a 7.  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 summary(wine_white_dset$quality)
 ```
 A razão de escolhermos 7 como nota divisora de vinhos bons e ruins é porque a média da qualidade dos vinhos é de aproximandamente 6 e menos de um quarto dos vinhos brancos estão com nota 7 ou acima. Decidimos por categorizar como vinhos bons aqules que tem uma avaliação de qualidade acima da média.
-Assim podemos rodar uma regressão logistica com as variaveis usadas anteriormente para analisarmos se o modelo gerado é aceitável.
+Assim podemos rodar uma regressão logistica com as variaveis usadas anteriormente para analisarmos se o modelo gerado é aceitável.  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-wine_white_dset <- wine_dset %>%
-  filter(Vinho == 'WHITE')
-Vinhos2Cat <- subset(wine_white_dset, select = -c(id_vinho))
+Vinhos2Cat <- wine_white_dset
 attach(Vinhos2Cat)
 Vinhos2Cat$quality_cat[quality >= 7] <- 'Bom'
 Vinhos2Cat$quality_cat[quality < 7] <- 'Ruim'
@@ -457,33 +421,31 @@ treino <- sample(1:NROW(Vinhos2Cat), as.integer(prt*NROW(Vinhos2Cat)))
 trainData <- Vinhos2Cat[treino,]
 testData  <- Vinhos2Cat[-treino,]
 
-modelo_log<-glm(quality_cat ~ alcohol+residualsugar+density, trainData, family=binomial(link=logit))
-summary(modelo_log)
+modelo_log <- glm(quality_cat ~ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates,
+                data = trainData, family="binomial")
 ```
-O p-value para todas as variáveis está ótimo, podemos usar esse modelo na nossa base de teste para calcularmos a acurácia.
-
+O p-value para todas as variáveis está ótimo, podemos usar esse modelo na nossa base de teste para calcularmos a acurácia.  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-
-attach(testData)
-Predito_teste<-predict(modelo_log, testData)
-
-
-fx_predito <- cut(Predito_teste, breaks=c(-1,2.5,4), right=F)
-
-MC <- table( quality_cat,  fx_predito , deparse.level = 2) #
-show(MC) 
-ACC = sum(diag(MC))/sum(MC) 
-show(ACC) 
-
+crossValSettings <- trainControl(method = "repeatedcv", number = 10,
+                                 savePredictions = TRUE)
+crossVal <- train(quality_cat ~ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates,
+                  data = trainData, family="binomial", method = "glm",
+                  trControl = crossValSettings)
+crossVal
 ```
-Aqui podemos ver a matriz de confusão, onde há 326 falsos positivos e 249 falsos negativos, com um total de 35% de acurácia. Esse modelo é melhor identificando os vinhos ruins, do que os bons, mas mesmo assim não consegue um resultado muito satisfatório.
-
-
-## Árvore de Decisão
-Vamos tentar com a árvore de decisão, usando as mesmas variáveis:
+__Matriz de confusão:__  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
-modelo_tree <- rpart (quality_cat ~ alcohol+residualsugar+density, data=trainData, cp = 0.006,minsplit = 150,maxdepth=10)
-
+predit_teste <- predict(crossVal, testData)
+confusionMatrix(predit_teste,testData$quality_cat)
+```
+  
+Este modelo se mostrou bem eficaz ao obter 80,61% de acurácia.  
+  
+## Árvore de Decisão  
+Vamos tentar com a árvore de decisão, usando as mesmas variáveis:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modelo_tree <- rpart (quality_cat ~ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates,
+                      data=trainData, cp = 0.006,minsplit = 150,maxdepth=10)
 
 rpart.plot(modelo_tree, type=4, extra=104, under=FALSE, clip.right.labs=TRUE,
            fallen.leaves=FALSE,   digits=2, varlen=-3, faclen=20,
@@ -492,19 +454,18 @@ rpart.plot(modelo_tree, type=4, extra=104, under=FALSE, clip.right.labs=TRUE,
            snip=FALSE)
 
 ```
-Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa árvore:
+Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa árvore:  
+__Matriz de confusão:__
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 pred_class <- predict(modelo_tree ,testData , type = "class")
-
-Campanha.matriz.de.confusao<-table(testData$quality_cat, pred_class)
-Campanha.matriz.de.confusao
-
-diagonal <- diag(Campanha.matriz.de.confusao)
-perc.erro <- 1 - sum(diagonal)/sum(Campanha.matriz.de.confusao)
-perc.erro
+confusionMatrix(pred_class,testData$quality_cat)
 ```
-A árvore de decisão com essas variáveis obtem apenas 19% de acurácia, muito abaixo da regressão logistica.  
   
+A árvore de decisão com essas variáveis obtém 78,55% de acurácia, um pouco abaixo da regressão logística.  
+  
+### Conclusão: regressão logística e árvore de decisão
+
+Esses dois modelos se saíram melhor ao transformar a qualidade em uma variável categória para conseguir prever os valores do dataset de teste. Embora a predição de modelos não nos dá a nota da qualidade de vinho num valor de 0~10, eles se monstraram eficazes na predição de vinhos bons e ruins.
   
 # Parte IV
 
