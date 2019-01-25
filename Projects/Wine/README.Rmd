@@ -1,0 +1,607 @@
+---
+title: "Análise da qualidade de vinhos"
+subtitle: "FIAP 04-IA | Conceitos Estatístico para IA"
+author:
+- Alef Tenório
+- Alex Pereira
+- Guilherme A. Leite
+- Raphael Oliveira Prates
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    keep_md: true
+    fig_height: 6
+    fig_width: 10
+    number_sections: yes
+    toc: yes
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Parte I
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+library(caret)
+library(data.table)
+library(e1071)
+library(dplyr)
+library(ggplot2)
+library(grid)
+library(plotly)
+library(tibble)
+library(stringr)
+library(rpart)
+library(rpart.plot)
+wine_dset <- read.csv2('BaseWine_Red_e_White2018.csv')
+```
+  
+## Descrição dos dados
+  
+Para começar nossa análise vamos identificar as variáveis para entender o que elas podem significar no contexto da composição de um vinho. 
+
+```{r var_vinhos}
+str(wine_dset)
+```
+__PH:__ vinhos são naturalmente ácidos, com a maioria indo de 2,8 a 4,0. Os níveis de pH estão intrinsecamente ligados ao estilo e qualidade dos vinhos. O pH relativamente baixo, na faixa de 3,1 a 3,4, parece ser pré-requisito para a produção de vinhos de alta qualidade com solidez.  
+  
+__Acidez Volátil:__ é um componente do vinho que tipicamente cresce conforme o vinho envelhece e, em quando atinge um nível elevado, é responsável pelo aroma de vinagre. É o resultado da falta de cuidados durante a vinificação.  
+  
+__Acidez Fixa:__ acidez é uma das características básica que tem uma contribuição  relevante para o sabor, frescura, equilíbrio e capacidade de conservação dos vinhos. Acidez Fixa é a diferença entre acidez total do vinho e sua acidez volátil.  
+  
+__Ácido Cítrico:__ nos vinhos o ácido cítrico tem pouca ou nenhuma presença. Nos vinhos tintos desaparece devido à ação de bactérias láticas (fermentação malolática). Sensorialmente é fresco, porém em alguns casos pode apresentar um leve final amargo.  
+  
+__Dióxido de Enxofre Livre:__ as atividade antioxidásica do dióxido de enxofre bloqueia a ação de enzimas oxidantes, principalmente no início do processo de elaboração, evitando reações de oxidação e o consequentemente o escurecimento do vinho. O excesso de dióxido de enxofre livre tem um grande impacto no sabor, deixando-o mais amargo e com uma sensação mais metálica.  
+  
+__Dióxido de Enxofre Total:__ quanto mais dióxido de enxofre total estiver disponível, mais estável será o dióxido de enxofre livre.  
+  
+__Açúcar Residual:__ no processo de fermentação do vinho a levedura vai transformando o açúcar da uva em álcool. Por isso que, em teoria, quanto mais açúcar houver na uva, mais álcool haverá no vinho. Porem nem todo o açúcar é transformado em alcool, e o açúcar que resta no final do processo de fermentação é conhecido como açúcar residual.  
+  
+__Cloretos:__ os vinhos possuem em sua composição diversos produtos enológicos, sais e ácidos. Estes sais influenciam diretamente em sua qualidade.  
+  
+__Densidade:__ define a leveza do vinhos, e pode ser caracterizado pelo tipo da uva ou por técnicas usadas na vinificação que podem ser determinantes na concentração da bebida.  
+  
+__Álcool:__ essa é uma característica que causa controversa entre sommeliers. Embora há vinhos premiados com uma porcentagem maior de álcool, outros defendem que para o vinho ser de qualidade tem que ser inferior a 14% de álcool.  
+  
+__Sulfatos:__ os sulfatos também tem um papel de conservantes nos vinhos e ajudam na extração dos compostos fenólicos do vinho, responsáveis pela concentração de cor e taninos.  
+  
+__Qualidade:__ uma infidade de aspectos influenciam na qualidade dos vinhos, desde aspectos como o nivel de oxidação, até a contaminação da rolha. No dataset a qualidade máxima é uma escala inteira entre 0 (menor qualidade) e 10 (maior qualidade).  
+  
+__Vinho:__ há inúmeros tipos de vinho (ex: tintos, brancos, roses, doces e espumantes), porém nossos dados contém apenas dois tipos: brancos e tintos.  
+
+Links acessados para fundamentação teórica:
+ 
+* https://www.extension.iastate.edu/wine/white-wine-production
+* https://www.extension.iastate.edu/wine/total-sulfur-dioxide-why-it-matters-too
+* https://grapesandwine.cals.cornell.edu/sites/grapesandwine.cals.cornell.edu/files/shared/documents/Research-Focus-2011-3.pdf
+* https://www.whichwinery.com/ask-the-somm/breaking-down-booze-wine-alcohol-levels-explored/
+  
+### Dimensão do dataset
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+wine_dset %>% 
+  group_by(Vinho) %>% 
+  count()
+```
+  
+A quantidade de dados para os vinhos brancos é aproximadamente 3 vezes maior que o vinho tinto.  
+  
+### Integridade dos dados  
+Antes de qualquer análise, vamos conferir se nosso dataset não apresenta valores faltantes:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+wine_white_dset <- 
+  wine_dset %>%
+  filter(Vinho == 'WHITE')
+
+wine_red_dset <- 
+  wine_dset %>% 
+  filter(Vinho == 'RED')
+
+sum(is.na(wine_white_dset))
+sum(is.na(wine_red_dset))
+                      
+```
+  
+Como as somas dos valores *NA*s, tanto para o vinho tinto quanto para o branco, podemos afirmar que __não há dados faltantes.__ Dessa forma podemos continuar sem precisar substituir ou remover os valores iguais a _NA_.
+  
+### Característica de cada tipo de vinho  
+O vinho branco e tinto apresentam características diferentes que definem se ele é bom ou ruim. Vamos dar uma olhada nos dados pra cada característica:  
+  
+__Vinho Branco__  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+summary(wine_white_dset)
+```
+  
+  
+__Vinho Tinto__  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+summary(wine_red_dset)
+```
+  
+#### Diferença da mediana das características por tipo de vinho 
+Trabalharemos com os valores das medianas, ao invés das médias, porque as medianas não sofrem o impacto que as médias sofreria devido a presença de outliers. Explorando esses dados é possível ter um overview de como essas característica estão organizadas pelo dataset e identificar o que difere um vinho tinto do branco.  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# Vinho Tinto
+median_red_dset <-  sapply(select(wine_red_dset, -c(Vinho, id_vinho, quality)), median)
+median_red_dset <- as.data.frame(median_red_dset)
+median_red_dset <- rownames_to_column(median_red_dset) %>% 
+  rename(Mediana = median_red_dset, Caracteristica = rowname) 
+
+# Vinho Branco
+median_white_dset <-  sapply(select(wine_white_dset, -c(Vinho, id_vinho, quality)),median)
+median_white_dset <- as.data.frame(median_white_dset)
+median_white_dset <- rownames_to_column(median_white_dset) %>% 
+  rename(Mediana = median_white_dset, Caracteristica = rowname) 
+
+# Diferenca
+mediana_diferenca <- data.frame(
+  Caracteristica = median_white_dset$Caracteristica,
+  Diferenca.Mediana = abs(median_white_dset$Mediana - median_red_dset$Mediana)
+)
+
+top_n(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)), dim(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)))[1])
+```
+
+Vamos utilizar a análise gráfica para reforçar a visualização dos valores já obtidos na função _summary_ (a visualização gráfica por histogramas nos auxilia também na detecção de outliers):
+  
+#### Diagrama de caixa de cada característica  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+par (mfrow=c(3,4))
+nomesColuna <- colnames(wine_dset)
+nomesColuna <- nomesColuna[-c(which(nomesColuna == "id_vinho"),which(nomesColuna == "Vinho" ))]
+for (coluna in nomesColuna) {
+  ggplot(wine_dset, aes(x=Vinho, y=coluna, fill=Vinho)) + 
+    geom_boxplot() +
+    scale_fill_manual(breaks = c("RED", "WHITE"), 
+                      values=c("red3", "khaki"))
+}
+```
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+# boxplot(fixedacidity, main='fixedacidity')
+g1 <- ggplot(wine_dset, aes(x=Vinho, y=fixedacidity, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(volatileacidity , main='volatileacidity')
+g2 <- ggplot(wine_dset, aes(x=Vinho, y=volatileacidity, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(citricacid , main='citricacid')
+g3 <- ggplot(wine_dset, aes(x=Vinho, y=citricacid, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(residualsugar, main='residualsugar')
+g4 <- ggplot(wine_dset, aes(x=Vinho, y=residualsugar, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(chlorides, main='chlorides')
+g5 <- ggplot(wine_dset, aes(x=Vinho, y=chlorides, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(freesulfurdioxide, main='freesulfurdioxide')
+g6 <- ggplot(wine_dset, aes(x=Vinho, y=freesulfurdioxide, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(totalsulfurdioxide, main='totalsulfurdioxide')
+g7 <- ggplot(wine_dset, aes(x=Vinho, y=totalsulfurdioxide, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(density, main='density')
+g8 <- ggplot(wine_dset, aes(x=Vinho, y=density, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(pH, main='pH')
+g9 <- ggplot(wine_dset, aes(x=Vinho, y=pH, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(sulphates, main='sulphates')
+g10 <- ggplot(wine_dset, aes(x=Vinho, y=sulphates, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(alcohol, main='alcohol')
+g11 <- ggplot(wine_dset, aes(x=Vinho, y=alcohol, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+# boxplot(Vinhos$quality, main='quality')
+g12 <- ggplot(wine_dset, aes(x=Vinho, y=quality, fill=Vinho)) + 
+  geom_boxplot() +
+  theme(legend.position="none") +
+  scale_fill_manual(breaks = c("RED", "WHITE"), 
+                    values=c("red3", "khaki"))
+
+layout <- matrix(c(1,2,3,4,5,6,7,8,9,10,11,12),4,3,byrow=TRUE)
+multiplot(g1, g2, g3, g4, g5, g6, g7, g8, g9 ,g10, g11, g12, layout=layout)
+``` 
+Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos selecionar somente um tipo de vinho para a criação de um modelo preditivo coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que para os tintos (aprox. 3 vezes maior), utilizaremos os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
+  
+Antes de prosseguirmos para a parte de remoção de outliers e a regressão linear, a variável o *freesulfurdioxide* chamou a atenção desde o tópico "Descrição dos Dados" por sua descrição dar indícios que este valor está relacionado ao sabor e, consequentemente, a qualidade do vinho. Testando esta relação:  
+  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+wine_dset %>%
+  group_by(quality, freesulfurdioxide) %>% 
+  ggplot(aes(factor(quality), freesulfurdioxide, color = quality)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0, 150)) +
+  theme(legend.position = "none") +
+  facet_wrap(~Vinho ) +
+  labs(y = "Dióxido de enxofre", x = "Qualidade")
+```
+  
+Embora os vinhos de maior qualidade apresentam um baixo valor de dióxido de enxofre livre, a relação dos outros valores com qualidade se mostrou insuficiente para determinar se o vinho é bom ou não, ou seja, outras características correlacionadas com o dióxido de enxofre livre devem explicar melhor a qualidade.  
+  
+#### Histograma da variável target *Qualidade*  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+wine_white_dset %>% group_by(quality) %>% 
+  count() %>% 
+  ggplot(aes(quality, n,fill = quality)) +
+  geom_col() +
+  theme(legend.position = "none") +
+   labs(x = "Qualidade", y = "Número de ocorrências")
+```
+
+A maioria dos vinhos brancos apresenta a qualidade entre 5 e 7, sendo a nota 6 o valor mais frequente.  
+
+### Remoção de outliers
+Com os diagramas de caixa foi possível identificar também a existência de outliers nos dados pois há pontos que estão acima do limite da _upper fence_ ou abaixo da _lower fence_. Esses limites (lower e upper) são calculados utilizando a seguinte relação:
+
+___Upper fence___:
+
+upper_fence = 3º Quartil + 1,5 * Amplitude inter-quartil
+
+___Lower fence___:
+
+lower_fence = 1º Quartil - 1,5 * Amplitude inter-quartil
+
+Para evitar que esses outliers influenciem em nossos modelos,usaremos uma abordagem mais conservadora para não remover tantos dados que considera __outliers valores absolutos maiores que (média + ( 3 * desvio padrão)):__   
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+wine_white_dset <- wine_white_dset %>% 
+  select(-c(Vinho, id_vinho))
+
+for (col in colnames(wine_white_dset)[1:11]) {
+  sd3 <- 3*sd(wine_white_dset[,col])
+  idx <- which(wine_white_dset[,col] > mean(wine_white_dset[,col]) + sd3 | wine_white_dset[,col] < mean(wine_white_dset[,col]) - sd3)
+  for (x in idx) {
+    wine_white_dset[x,col] <- NA
+  }
+}
+
+wine_white_dset <- na.omit(wine_white_dset)
+```
+  
+### Correlação
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+whitedset_cor <- cor(wine_white_dset)
+corrplot::corrplot(whitedset_cor, method="circle", order="hclust")
+```
+  
+Pela matriz de correlação é perceptível como algumas variáveis se correlacionam mais com o restante do dataset do que as outras, são elas: *density*, *totalsufurdioxide*,  *freesufurdioxide*  e *alcohol*.
+  
+### Componentes principais  
+As características que possuem similaridade alta no nível da correlação podem trazer informações redundantes e aumentar a instabilidade dos modelos, por isso, usaremos a análise de componentes principais para combinar essas variáveis para formar componentes ortogonais (não relacionadas com os componentes anteriores).  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# Removendo a variavel quality
+white_dsetX <- wine_white_dset[,-12]
+
+white_pcomp <- prcomp(white_dsetX, center = TRUE,scale = TRUE)
+summary(white_pcomp)
+plot(white_pcomp, type = 'l', main = "Componentes Principais")
+```
+  
+Observa-se pelo gráfico que usando os componentes principais 1 até 6, os componentes explicam 81,88% da variância dos dados. A medida que outros componentes principais são adicionados esse número aumenta. Na regressão linear voltaremos à análise dos componentes principais.  
+  
+# Parte II - (Vinhos Brancos)
+  
+## Regresão Linear
+O objetivo desta sessão é criar um modelo de regressão linear para estimar o índice de qualidade dos vinhos.
+Após dividir o dataset entre dataset de treino e teste, traçamos uma regressão linear com todas variáveis para estimar a qualidade do vinho:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+set.seed(2019)
+prt <- 2/3
+
+treino <- sample(1:NROW(wine_white_dset), as.integer(prt*NROW(wine_white_dset)))
+
+trainData <- wine_white_dset[treino,]
+testData  <- wine_white_dset[-treino,]
+
+modeloBackWard <- lm(quality ~., data = trainData)
+summary(modeloBackWard)
+```
+Do *modeloBackWard* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ todas as outras  
+ 
+Os valores com asterisco são aqueles mais correlacionados com a variável *quality*. A coluna *Pr(>|t|)* mostra o Teste T de Student, portanto, valores abaixo do p value igual a 0,05 são relevantes para a análise de acordo com a taxa escolhida (p = 5%).
+Como a maioria das variáveis possuem asterisco, iremos utilizar duas abordagens pra encontrar o melhor modelo usando menos variáveis para evitar informações redundantes:
+
+* Utilizar as bibliotecas *leaps* e *car* para encontrar o melhor subset pra regressão linear;
+* Utilizar as componentes principais no modelo de regressão linear.
+
+### Subset para regressão linear
+
+__Biblioteca Leaps e Car__
+
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(car)
+library(leaps)
+
+leaps <- regsubsets(quality~., data = trainData, nbest = 2, method = "exhaustive")
+subsets(leaps, statistic = "bic", legend = FALSE, ylim=c(-950,-800), xlim=c(2,6.3))
+```
+Usando somente 4 variáveis pra construir o modelo de regressão linear da qualidade, o gráfico acima mostra que a melhor escolha é a combinação *volatileacidity+residualsugar+freesulfurdioxide+alcohol* por ter o menor valor do critério de informação bayesiano (BIC). A ideia de pegar 4 variáveis é pra selecionar um número reduzido de itens pra construir o modelo, desta forma no mundo real nós conseguiríamos fazer um controle de qualidade usando testes químicos com menos substâncias, o que depreciaria o custo do processo.  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+modelo4 <- lm(quality ~volatileacidity+residualsugar+freesulfurdioxide+alcohol,
+                     data = trainData)
+summary(modelo4)
+```
+Do *modelo4* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ volatileacidity+residualsugar+freesulfurdioxide+alcohol  
+__R²:__ 25,21%  
+  
+O valor R² ainda é muito baixo para o modelo, 25,21%. Esse valor significa que o modelo explica somente a variação desta porcentagem dos dados do modelo.  
+  
+E com 6 variáveis?  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+
+modelo6 <- lm(quality ~fixedacidity+volatileacidity+residualsugar+density+pH+sulphates,
+                     data = trainData)
+summary(modelo6)
+```
+Do *modelo6* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates  
+__R²:__ 26,64%  
+  
+O valor R² agora é de  26,64%, ou seja, o ganho na qualidade do modelo ao adicionar mais duas variáveis foi pouco significativo, portanto, __estes modelos de regressão linear não são adequados pra predição da qualidade.__  
+  
+Tentaremos agora usar regressão linear com os componentes principais para aumentar R².  
+  
+### Componentes principais com regressão linear  
+  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+# Removendo a variavel quality e criando variavel com componentes principais para teste dset
+white_dsetX <- trainData[,-12]
+white_pcomp <- prcomp(white_dsetX, center = TRUE,scale = TRUE)
+
+
+trainData2 <- trainData[,12]
+# white_pcomp foi calculado na sessao de componentes principais
+trainData2 <- cbind(trainData2,data.frame(white_pcomp$x))
+testData2 <- testData[,12]
+testData2 <- cbind(trainData2,data.frame(white_pcomp$x))
+colnames(trainData2)[1] <- "quality"
+
+modeloCP <- lm(quality ~., data = trainData2)
+summary(modeloCP)
+```
+Excluindo o *PC2* e o *PC8* do modelo por apresentarem um elevado *Pr(>|t|)*:  
+  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modeloCP2 <- lm(quality ~PC1+PC3+PC4+PC5+PC6+PC7+PC9+PC10+PC11, data = trainData2)
+summary(modeloCP2)
+```
+Do *modeloCP2* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ PC1+PC3+PC4+PC5+PC6+PC7+PC9+PC10+PC11  
+__R²:__ 27,77%  
+  
+### Testando os modelos  
+  
+Os modelos *modelo4* e  *modelo6* apresentam um R² e taxa de erro muito parecidos, demonstrando que a eficácia deles pra explicar a variância dos dados é muito próxima. Levando tudo isso em conta, __o modelo indicado é o *modelo4* por trabalhar com menos variáveis evitando assim o uso de informações redundantes.__
+  
+## Árvore de regressão
+O algoritmo para a árvore de regressão é bem parecido da regressão linear:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modeloBackTree <- rpart(quality ~., data = trainData)
+modeloBackTree
+rpart.plot(modeloBackTree)
+```
+Do *modeloBackTree* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ todas as outras  
+  
+Achando o melhor coeficiente de complexidade:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+printcp(modeloBackTree)
+```
+O valor de CP para a menor taxa de erro de cross-validation:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"]
+```
+"Podando" a árvore com o melhor valor de CP:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+ptree <- prune(modeloBackTree, cp = modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"])
+rpart.plot(ptree)
+```
+Usando as mesmas variáveis do modelo4:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modeloBackTree4 <- rpart(quality ~volatileacidity+residualsugar+freesulfurdioxide+alcohol, data = trainData, cp = 0.01)
+modeloBackTree4
+rpart.plot(modeloBackTree4)
+```
+Do *modeloBackTree4* acima:  
+  
+__Variáveis dependentes:__ quality  
+__Variáveis independentes:__ volatileacidity+residualsugar+freesulfurdioxide+alcohol  
+  
+### Conclusão: regressão linear e árvore de regressão  
+  
+Os dois modelos, por apresentarem valores contínuos não inteiros como predição, não se saíram bem para prever a qualidade dos vinhos com precisão. Neste caso seria melhor trabalhar com modelos qualitativos que possam traduzir faixas de valores em qualidade, possibilitando assim a construção de um modelo mais eficaz. Portanto, a próxima parte tratará desses modelos qualitativos: modelo de regressão logística e árvore de decisão.        
+  
+  
+# Parte III  
+## Regressão Logística  
+Para aplicarmor uma regressão logistica decidimos categorizar a qualidade dos vinhos em dois tipos, vinhos "Bons" com uma qualidade igual ou superior a 7, ou vinhos "Ruins"" com uma pontuação de qualidade inferior a 7.  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+summary(wine_white_dset$quality)
+```
+A razão de escolhermos 7 como nota divisora de vinhos bons e ruins é porque a média da qualidade dos vinhos é de aproximandamente 6 e menos de um quarto dos vinhos brancos estão com nota 7 ou acima. Decidimos por categorizar como vinhos bons aqules que tem uma avaliação de qualidade acima da média.
+Assim podemos rodar uma regressão logistica com as variaveis usadas anteriormente para analisarmos se o modelo gerado é aceitável.  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+Vinhos2Cat <- wine_white_dset
+attach(Vinhos2Cat)
+Vinhos2Cat$quality_cat[quality >= 7] <- 'Bom'
+Vinhos2Cat$quality_cat[quality < 7] <- 'Ruim'
+
+Vinhos2Cat <- subset(Vinhos2Cat, select = -c(quality))
+
+set.seed(2019)
+prt <- 2/3
+
+Vinhos2Cat$quality_cat <- as.factor(Vinhos2Cat$quality_cat)
+
+treino <- sample(1:NROW(Vinhos2Cat), as.integer(prt*NROW(Vinhos2Cat)))
+
+trainData <- Vinhos2Cat[treino,]
+testData  <- Vinhos2Cat[-treino,]
+
+modelo_log <- glm(quality_cat ~ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates,
+                data = trainData, family="binomial")
+```
+O p-value para todas as variáveis está ótimo, podemos usar esse modelo na nossa base de teste para calcularmos a acurácia.  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+crossValSettings <- trainControl(method = "repeatedcv", number = 10,
+                                 savePredictions = TRUE)
+crossVal <- train(quality_cat ~ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates,
+                  data = trainData, family="binomial", method = "glm",
+                  trControl = crossValSettings)
+crossVal
+```
+__Matriz de confusão:__  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+predit_teste <- predict(crossVal, testData)
+confusionMatrix(predit_teste,testData$quality_cat)
+```
+  
+Este modelo se mostrou bem eficaz ao obter 80,61% de acurácia.  
+  
+## Árvore de Decisão  
+Vamos tentar com a árvore de decisão, usando as mesmas variáveis:  
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+modelo_tree <- rpart (quality_cat ~ fixedacidity+volatileacidity+residualsugar+density+pH+sulphates,
+                      data=trainData, cp = 0.006,minsplit = 150,maxdepth=10)
+
+rpart.plot(modelo_tree, type=4, extra=104, under=FALSE, clip.right.labs=TRUE,
+           fallen.leaves=FALSE,   digits=2, varlen=-3, faclen=20,
+           cex=0.4, tweak=1.7,
+           compress=TRUE,
+           snip=FALSE)
+
+```
+Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa árvore:  
+__Matriz de confusão:__
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+pred_class <- predict(modelo_tree ,testData , type = "class")
+confusionMatrix(pred_class,testData$quality_cat)
+```
+  
+A árvore de decisão com essas variáveis obtém 78,55% de acurácia, um pouco abaixo da regressão logística.  
+  
+### Conclusão: regressão logística e árvore de decisão
+
+Esses dois modelos se saíram melhor ao transformar a qualidade em uma variável categória para conseguir prever os valores do dataset de teste. Embora a predição de modelos não nos dá a nota da qualidade de vinho num valor de 0~10, eles se monstraram eficazes na predição de vinhos bons e ruins.
+  
+# Parte IV
+
+<!-- a) quais outras técnicas supervisionadas vocês indicariam como adequadas
+para esta análise? -->
+  
+## Técnicas supervisionadas que poderiam ser usadas
+
+### Gaussian Naive Bayes
+
+Uma técnica que pode ser adequada para classificação dos vinhos é Gaussian Naive Bayes essa técnica existe desde os anos 1950. Pertence a uma família de algoritmos chamados classificadores probabilísticos ou probabilidade condicional, onde também assume independência entre os recursos,isso nos permite prever uma classe/categoria, com base em determinado conjunto de recursos, usando probabilidade.O Naive Bayes pode ser aplicado efetivamente para alguns problemas de classificação, apesar de sua simplicidade, o classificador faz a definição de categorias surpreendentemente bem e é freqüentemente usado devido ao fato de superar métodos de classificação mais sofisticados.
+
+### Random forest
+
+Quando usadas sozinhas, as árvores de decisão são propensas a overfitting. No entanto, random forest (Várias árvores de decisão) ajudam corrigindo o possível overfitting que poderia ocorrer. A técnica Random forest utiliza uma multiplicidade de árvores de decisão diferentes com previsões diferentes, uma random forest combina os resultados dessas árvores individuais para fornecer os resultados finais.A random forest aplica um algoritmo conjunto chamado ensacamento às árvores de decisão, que ajuda a reduzir a variação e o ajuste excessivo.
+
+<!-- b) e, das técnicas Não Supervisionadas, quais? -->
+
+## Técnicas não supervisionadas que poderiam ser usadas
+
+### Generative Adversarial Networks (GANs)
+
+O Funcionamento de uma GAN se baseia em duas redes neurais uma Geradora e outra com o Discriminadora, o papel da rede geradora é falsificar dados e da rede Discriminadora é identificar quais dados foram falsificados. Ambas estão aprendendo e melhorando. A rede gerador está constantemente aprendendo a criar falsificações melhores, e a rede  Discriminadora está constantemente melhorando em detectá-los.
+
+### K-means
+
+É uma técnica de análise de cluster que permite agrupar os dados em grupos chamados clusters. Como os rótulos não são fornecidos para cada dado de treinamento, os clusters são determinados pela similaridade dos dados um do outro, essa técnica pode ser uma boa opção para a classificação dos vinhos já que possuímos um grande número de dados
+
