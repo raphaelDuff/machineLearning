@@ -464,7 +464,7 @@ corrplot::corrplot(whitedset_cor, method="circle", order="hclust")
 
 ![](README_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
   
-Pela matriz de correlação é perceptível como algumas variáveis se correlacionam mais com o restante do dataset do que as outras, são elas: *density*, *totalsufurdioxide*,  *freesufurdioxide*  e *alcohol*.
+Pela matriz de correlação é perceptível como algumas variáveis se correlacionam mais com o restante do dataset do que as outras devido ao tamanho do círculo e da cor (azul para variáveis diretamente proporcionais e vermelho para inversamente proporcionais), por exemplo: *density*, *totalsufurdioxide*,  *freesufurdioxide*  e *alcohol*.
   
 ### Componentes principais  
 As características que possuem similaridade alta no nível da correlação podem trazer informações redundantes e aumentar a instabilidade dos modelos, por isso, usaremos a análise de componentes principais para combinar essas variáveis para formar componentes ortogonais (não relacionadas com os componentes anteriores).  
@@ -882,6 +882,9 @@ Do *modeloBackTree4* acima:
   
 __Variáveis dependentes:__ quality  
 __Variáveis independentes:__ volatileacidity+residualsugar+freesulfurdioxide+alcohol  
+
+Pelo topo da árvore identificamos a primeira característica marcante para tomada de decisões do modelo, o álcool. Se o valor desta variável for menor que 11 (11%), a predição caminha pelo lado esquerdo da árvore encontrando outras duas variáveis: *volatileacidity* e *alcohol*(novamente). Se álcool for maior do que 11, a predição caminha pelo lado direito da árvore encontrando as variáveis *freesulfurdioxide* e *alcohol*.  
+Apesar valores finais de qualidade chegam em valores não inteiros, este modelo serve de um bom parâmetro pra estimar de forma quantificada a faixa de valores de cada variável que interfere em sua qualidade. 
   
 ### Conclusão: regressão linear e árvore de regressão  
   
