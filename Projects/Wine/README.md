@@ -40,7 +40,7 @@ Como objeto de estudo foi utilizado o dataset do vinho português "Vinho Verde":
 A. Cerdeira, F. Almeida, T. Matos and J. Reis, Viticulture Commission of the Vinho Verde Region(CVRVV), Porto, Portugal
 @2009
 
-Espero que essa análise contribua para o desenvolvimento de novos estudantes da área de Machine Learning!
+Esperamos que essa análise contribua para o desenvolvimento de novos estudantes da área de Machine Learning!
 
 Parte I - Análise Exploratória de dados
 =======================================

@@ -19,7 +19,7 @@ Paulo Cortez, University of Minho, Guimarães, Portugal, http://www3.dsi.uminho.p
 A. Cerdeira, F. Almeida, T. Matos and J. Reis, Viticulture Commission of the Vinho Verde Region(CVRVV), Porto, Portugal   
 @2009  
   
-Espero que essa análise contribua para o desenvolvimento de novos estudantes da área de Machine Learning!  
+Esperamos que essa análise contribua para o desenvolvimento de novos estudantes da área de Machine Learning!  
 
 # Parte I - Análise Exploratória de dados
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
