@@ -6,7 +6,7 @@ author:
 - Alex Pereira
 - Guilherme A. Leite
 - Raphael Oliveira Prates
-date: '2019-01-25'
+date: '2019-01-26'
 output:
   html_document:
     keep_md: true
@@ -19,10 +19,10 @@ output:
 
 
 
-# Parte I
+# Parte I - Análise Exploratória de dados
 
   
-## Descrição dos dados
+## Descrição das variáveis
   
 Para começar nossa análise vamos identificar as variáveis para entender o que elas podem significar no contexto da composição de um vinho. 
 
@@ -497,7 +497,7 @@ plot(white_pcomp, type = 'l', main = "Componentes Principais")
   
 Observa-se pelo gráfico que usando os componentes principais 1 até 6, os componentes explicam 81,88% da variância dos dados. A medida que outros componentes principais são adicionados esse número aumenta. Na regressão linear voltaremos à análise dos componentes principais.  
   
-# Parte II - (Vinhos Brancos)
+# Parte II  - Técnicas quantitativas
   
 ## Regresão Linear
 O objetivo desta sessão é criar um modelo de regressão linear para estimar o índice de qualidade dos vinhos.
@@ -886,12 +886,13 @@ __Variáveis independentes:__ volatileacidity+residualsugar+freesulfurdioxide+alc
 Pelo topo da árvore identificamos a primeira característica marcante para tomada de decisões do modelo, o álcool. Se o valor desta variável for menor que 11 (11%), a predição caminha pelo lado esquerdo da árvore encontrando outras duas variáveis: *volatileacidity* e *alcohol*(novamente). Se álcool for maior do que 11, a predição caminha pelo lado direito da árvore encontrando as variáveis *freesulfurdioxide* e *alcohol*.  
 Apesar valores finais de qualidade chegam em valores não inteiros, este modelo serve de um bom parâmetro pra estimar de forma quantificada a faixa de valores de cada variável que interfere em sua qualidade. 
   
-### Conclusão: regressão linear e árvore de regressão  
+## Conclusão: regressão linear e árvore de regressão  
   
 Os dois modelos, por apresentarem valores contínuos não inteiros como predição, não se saíram bem para prever a qualidade dos vinhos com precisão. Neste caso seria melhor trabalhar com modelos qualitativos que possam traduzir faixas de valores em qualidade, possibilitando assim a construção de um modelo mais eficaz. Portanto, a próxima parte tratará desses modelos qualitativos: modelo de regressão logística e árvore de decisão.        
   
   
-# Parte III  
+# Parte III  - Técnicas de discriminação  
+  
 ## Regressão Logística  
 Para aplicarmor uma regressão logistica decidimos categorizar a qualidade dos vinhos em dois tipos, vinhos "Bons" com uma qualidade igual ou superior a 7, ou vinhos "Ruins"" com uma pontuação de qualidade inferior a 7.  
 
@@ -1045,34 +1046,29 @@ confusionMatrix(pred_class,testData$quality_cat)
   
 A árvore de decisão com essas variáveis obtém 78,55% de acurácia, um pouco abaixo da regressão logística.  
   
-### Conclusão: regressão logística e árvore de decisão
+## Conclusão: regressão logística e árvore de decisão
 
 Esses dois modelos se saíram melhor ao transformar a qualidade em uma variável categória para conseguir prever os valores do dataset de teste. Embora a predição de modelos não nos dá a nota da qualidade de vinho num valor de 0~10, eles se monstraram eficazes na predição de vinhos bons e ruins.
   
-# Parte IV
-
-<!-- a) quais outras técnicas supervisionadas vocês indicariam como adequadas
-para esta análise? -->
+# Parte IV - Modelos alternativos  
   
 ## Técnicas supervisionadas que poderiam ser usadas
-
+  
 ### Gaussian Naive Bayes
-
+  
 Uma técnica que pode ser adequada para classificação dos vinhos é Gaussian Naive Bayes essa técnica existe desde os anos 1950. Pertence a uma família de algoritmos chamados classificadores probabilísticos ou probabilidade condicional, onde também assume independência entre os recursos,isso nos permite prever uma classe/categoria, com base em determinado conjunto de recursos, usando probabilidade.O Naive Bayes pode ser aplicado efetivamente para alguns problemas de classificação, apesar de sua simplicidade, o classificador faz a definição de categorias surpreendentemente bem e é freqüentemente usado devido ao fato de superar métodos de classificação mais sofisticados.
 
 ### Random forest
 
 Quando usadas sozinhas, as árvores de decisão são propensas a overfitting. No entanto, random forest (Várias árvores de decisão) ajudam corrigindo o possível overfitting que poderia ocorrer. A técnica Random forest utiliza uma multiplicidade de árvores de decisão diferentes com previsões diferentes, uma random forest combina os resultados dessas árvores individuais para fornecer os resultados finais.A random forest aplica um algoritmo conjunto chamado ensacamento às árvores de decisão, que ajuda a reduzir a variação e o ajuste excessivo.
-
-<!-- b) e, das técnicas Não Supervisionadas, quais? -->
-
+  
+  
 ## Técnicas não supervisionadas que poderiam ser usadas
 
 ### Generative Adversarial Networks (GANs)
 
 O Funcionamento de uma GAN se baseia em duas redes neurais uma Geradora e outra com o Discriminadora, o papel da rede geradora é falsificar dados e da rede Discriminadora é identificar quais dados foram falsificados. Ambas estão aprendendo e melhorando. A rede gerador está constantemente aprendendo a criar falsificações melhores, e a rede  Discriminadora está constantemente melhorando em detectá-los.
-
-### K-means
-
+  
+### K-means  
 É uma técnica de análise de cluster que permite agrupar os dados em grupos chamados clusters. Como os rótulos não são fornecidos para cada dado de treinamento, os clusters são determinados pela similaridade dos dados um do outro, essa técnica pode ser uma boa opção para a classificação dos vinhos já que possuímos um grande número de dados
 

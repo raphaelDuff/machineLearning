@@ -14,7 +14,7 @@
 <meta name="author" content="Guilherme A. Leite" />
 <meta name="author" content="Raphael Oliveira Prates" />
 
-<meta name="date" content="2019-01-25" />
+<meta name="date" content="2019-01-26" />
 
 <title>Análise da qualidade de vinhos</title>
 
@@ -211,14 +211,14 @@ $(document).ready(function () {
 <h4 class="author"><em>Alex Pereira</em></h4>
 <h4 class="author"><em>Guilherme A. Leite</em></h4>
 <h4 class="author"><em>Raphael Oliveira Prates</em></h4>
-<h4 class="date"><em>2019-01-25</em></h4>
+<h4 class="date"><em>2019-01-26</em></h4>
 
 </div>
 
 <div id="TOC">
 <ul>
-<li><a href="#parte-i"><span class="toc-section-number">1</span> Parte I</a><ul>
-<li><a href="#descricao-dos-dados"><span class="toc-section-number">1.1</span> Descrição dos dados</a><ul>
+<li><a href="#parte-i---analise-exploratoria-de-dados"><span class="toc-section-number">1</span> Parte I - Análise Exploratória de dados</a><ul>
+<li><a href="#descricao-das-variaveis"><span class="toc-section-number">1.1</span> Descrição das variáveis</a><ul>
 <li><a href="#dimensao-do-dataset"><span class="toc-section-number">1.1.1</span> Dimensão do dataset</a></li>
 <li><a href="#integridade-dos-dados"><span class="toc-section-number">1.1.2</span> Integridade dos dados</a></li>
 <li><a href="#caracteristica-de-cada-tipo-de-vinho"><span class="toc-section-number">1.1.3</span> Característica de cada tipo de vinho</a></li>
@@ -227,23 +227,21 @@ $(document).ready(function () {
 <li><a href="#componentes-principais"><span class="toc-section-number">1.1.6</span> Componentes principais</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#parte-ii---vinhos-brancos"><span class="toc-section-number">2</span> Parte II - (Vinhos Brancos)</a><ul>
+<li><a href="#parte-ii---tecnicas-quantitativas"><span class="toc-section-number">2</span> Parte II - Técnicas quantitativas</a><ul>
 <li><a href="#regresao-linear"><span class="toc-section-number">2.1</span> Regresão Linear</a><ul>
 <li><a href="#subset-para-regressao-linear"><span class="toc-section-number">2.1.1</span> Subset para regressão linear</a></li>
 <li><a href="#componentes-principais-com-regressao-linear"><span class="toc-section-number">2.1.2</span> Componentes principais com regressão linear</a></li>
 <li><a href="#testando-os-modelos"><span class="toc-section-number">2.1.3</span> Testando os modelos</a></li>
 </ul></li>
-<li><a href="#arvore-de-regressao"><span class="toc-section-number">2.2</span> Árvore de regressão</a><ul>
-<li><a href="#conclusao-regressao-linear-e-arvore-de-regressao"><span class="toc-section-number">2.2.1</span> Conclusão: regressão linear e árvore de regressão</a></li>
+<li><a href="#arvore-de-regressao"><span class="toc-section-number">2.2</span> Árvore de regressão</a></li>
+<li><a href="#conclusao-regressao-linear-e-arvore-de-regressao"><span class="toc-section-number">2.3</span> Conclusão: regressão linear e árvore de regressão</a></li>
 </ul></li>
-</ul></li>
-<li><a href="#parte-iii"><span class="toc-section-number">3</span> Parte III</a><ul>
+<li><a href="#parte-iii---tecnicas-de-discriminacao"><span class="toc-section-number">3</span> Parte III - Técnicas de discriminação</a><ul>
 <li><a href="#regressao-logistica"><span class="toc-section-number">3.1</span> Regressão Logística</a></li>
-<li><a href="#arvore-de-decisao"><span class="toc-section-number">3.2</span> Árvore de Decisão</a><ul>
-<li><a href="#conclusao-regressao-logistica-e-arvore-de-decisao"><span class="toc-section-number">3.2.1</span> Conclusão: regressão logística e árvore de decisão</a></li>
+<li><a href="#arvore-de-decisao"><span class="toc-section-number">3.2</span> Árvore de Decisão</a></li>
+<li><a href="#conclusao-regressao-logistica-e-arvore-de-decisao"><span class="toc-section-number">3.3</span> Conclusão: regressão logística e árvore de decisão</a></li>
 </ul></li>
-</ul></li>
-<li><a href="#parte-iv"><span class="toc-section-number">4</span> Parte IV</a><ul>
+<li><a href="#parte-iv---modelos-alternativos"><span class="toc-section-number">4</span> Parte IV - Modelos alternativos</a><ul>
 <li><a href="#tecnicas-supervisionadas-que-poderiam-ser-usadas"><span class="toc-section-number">4.1</span> Técnicas supervisionadas que poderiam ser usadas</a><ul>
 <li><a href="#gaussian-naive-bayes"><span class="toc-section-number">4.1.1</span> Gaussian Naive Bayes</a></li>
 <li><a href="#random-forest"><span class="toc-section-number">4.1.2</span> Random forest</a></li>
@@ -256,10 +254,10 @@ $(document).ready(function () {
 </ul>
 </div>
 
-<div id="parte-i" class="section level1">
-<h1><span class="header-section-number">1</span> Parte I</h1>
-<div id="descricao-dos-dados" class="section level2">
-<h2><span class="header-section-number">1.1</span> Descrição dos dados</h2>
+<div id="parte-i---analise-exploratoria-de-dados" class="section level1">
+<h1><span class="header-section-number">1</span> Parte I - Análise Exploratória de dados</h1>
+<div id="descricao-das-variaveis" class="section level2">
+<h2><span class="header-section-number">1.1</span> Descrição das variáveis</h2>
 <p>Para começar nossa análise vamos identificar as variáveis para entender o que elas podem significar no contexto da composição de um vinho.</p>
 <pre class="r"><code>str(wine_dset)</code></pre>
 <pre><code>## 'data.frame':    6497 obs. of  14 variables:
@@ -636,8 +634,8 @@ summary(white_pcomp)</code></pre>
 </div>
 </div>
 </div>
-<div id="parte-ii---vinhos-brancos" class="section level1">
-<h1><span class="header-section-number">2</span> Parte II - (Vinhos Brancos)</h1>
+<div id="parte-ii---tecnicas-quantitativas" class="section level1">
+<h1><span class="header-section-number">2</span> Parte II - Técnicas quantitativas</h1>
 <div id="regresao-linear" class="section level2">
 <h2><span class="header-section-number">2.1</span> Regresão Linear</h2>
 <p>O objetivo desta sessão é criar um modelo de regressão linear para estimar o índice de qualidade dos vinhos. Após dividir o dataset entre dataset de treino e teste, traçamos uma regressão linear com todas variáveis para estimar a qualidade do vinho:</p>
@@ -934,14 +932,14 @@ modeloBackTree4</code></pre>
 <strong>Variáveis independentes:</strong> volatileacidity+residualsugar+freesulfurdioxide+alcohol</p>
 <p>Pelo topo da árvore identificamos a primeira característica marcante para tomada de decisões do modelo, o álcool. Se o valor desta variável for menor que 11 (11%), a predição caminha pelo lado esquerdo da árvore encontrando outras duas variáveis: <em>volatileacidity</em> e <em>alcohol</em>(novamente). Se álcool for maior do que 11, a predição caminha pelo lado direito da árvore encontrando as variáveis <em>freesulfurdioxide</em> e <em>alcohol</em>.<br />
 Apesar valores finais de qualidade chegam em valores não inteiros, este modelo serve de um bom parâmetro pra estimar de forma quantificada a faixa de valores de cada variável que interfere em sua qualidade.</p>
-<div id="conclusao-regressao-linear-e-arvore-de-regressao" class="section level3">
-<h3><span class="header-section-number">2.2.1</span> Conclusão: regressão linear e árvore de regressão</h3>
+</div>
+<div id="conclusao-regressao-linear-e-arvore-de-regressao" class="section level2">
+<h2><span class="header-section-number">2.3</span> Conclusão: regressão linear e árvore de regressão</h2>
 <p>Os dois modelos, por apresentarem valores contínuos não inteiros como predição, não se saíram bem para prever a qualidade dos vinhos com precisão. Neste caso seria melhor trabalhar com modelos qualitativos que possam traduzir faixas de valores em qualidade, possibilitando assim a construção de um modelo mais eficaz. Portanto, a próxima parte tratará desses modelos qualitativos: modelo de regressão logística e árvore de decisão.</p>
 </div>
 </div>
-</div>
-<div id="parte-iii" class="section level1">
-<h1><span class="header-section-number">3</span> Parte III</h1>
+<div id="parte-iii---tecnicas-de-discriminacao" class="section level1">
+<h1><span class="header-section-number">3</span> Parte III - Técnicas de discriminação</h1>
 <div id="regressao-logistica" class="section level2">
 <h2><span class="header-section-number">3.1</span> Regressão Logística</h2>
 <p>Para aplicarmor uma regressão logistica decidimos categorizar a qualidade dos vinhos em dois tipos, vinhos “Bons” com uma qualidade igual ou superior a 7, ou vinhos “Ruins”&quot; com uma pontuação de qualidade inferior a 7.</p>
@@ -1061,16 +1059,14 @@ confusionMatrix(pred_class,testData$quality_cat)</code></pre>
 ##        'Positive' Class : Bom            
 ## </code></pre>
 <p>A árvore de decisão com essas variáveis obtém 78,55% de acurácia, um pouco abaixo da regressão logística.</p>
-<div id="conclusao-regressao-logistica-e-arvore-de-decisao" class="section level3">
-<h3><span class="header-section-number">3.2.1</span> Conclusão: regressão logística e árvore de decisão</h3>
+</div>
+<div id="conclusao-regressao-logistica-e-arvore-de-decisao" class="section level2">
+<h2><span class="header-section-number">3.3</span> Conclusão: regressão logística e árvore de decisão</h2>
 <p>Esses dois modelos se saíram melhor ao transformar a qualidade em uma variável categória para conseguir prever os valores do dataset de teste. Embora a predição de modelos não nos dá a nota da qualidade de vinho num valor de 0~10, eles se monstraram eficazes na predição de vinhos bons e ruins.</p>
 </div>
 </div>
-</div>
-<div id="parte-iv" class="section level1">
-<h1><span class="header-section-number">4</span> Parte IV</h1>
-<!-- a) quais outras técnicas supervisionadas vocês indicariam como adequadas
-para esta análise? -->
+<div id="parte-iv---modelos-alternativos" class="section level1">
+<h1><span class="header-section-number">4</span> Parte IV - Modelos alternativos</h1>
 <div id="tecnicas-supervisionadas-que-poderiam-ser-usadas" class="section level2">
 <h2><span class="header-section-number">4.1</span> Técnicas supervisionadas que poderiam ser usadas</h2>
 <div id="gaussian-naive-bayes" class="section level3">
@@ -1080,7 +1076,6 @@ para esta análise? -->
 <div id="random-forest" class="section level3">
 <h3><span class="header-section-number">4.1.2</span> Random forest</h3>
 <p>Quando usadas sozinhas, as árvores de decisão são propensas a overfitting. No entanto, random forest (Várias árvores de decisão) ajudam corrigindo o possível overfitting que poderia ocorrer. A técnica Random forest utiliza uma multiplicidade de árvores de decisão diferentes com previsões diferentes, uma random forest combina os resultados dessas árvores individuais para fornecer os resultados finais.A random forest aplica um algoritmo conjunto chamado ensacamento às árvores de decisão, que ajuda a reduzir a variação e o ajuste excessivo.</p>
-<!-- b) e, das técnicas Não Supervisionadas, quais? -->
 </div>
 </div>
 <div id="tecnicas-nao-supervisionadas-que-poderiam-ser-usadas" class="section level2">
