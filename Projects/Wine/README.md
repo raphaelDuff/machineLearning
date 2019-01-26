@@ -2,6 +2,7 @@ Análise da qualidade de vinhos
 ================
 Alef Tenório; Alex Pereira; Guilherme A. Leite & Raphael Prates
 
+-   [Introdução](#introdução)
 -   [Parte I - Análise Exploratória de dados](#parte-i---análise-exploratória-de-dados)
     -   [Descrição das variáveis](#descrição-das-variáveis)
         -   [Dimensão do dataset](#dimensão-do-dataset)
@@ -28,6 +29,18 @@ Alef Tenório; Alex Pereira; Guilherme A. Leite & Raphael Prates
     -   [Técnicas não supervisionadas que poderiam ser usadas](#técnicas-não-supervisionadas-que-poderiam-ser-usadas)
         -   [Generative Adversarial Networks (GANs)](#generative-adversarial-networks-gans)
         -   [K-means](#k-means)
+
+Introdução
+==========
+
+Este trabalho foi realizado na matéria "Conceitos Estatísticos para IA" do curso de MBA em **Artificial Intelligence and Machine Learning** da FIAP, tendo como objetivo a utilização de técnicas de estatística para exploração de dados e o uso de algoritmos para predição da qualidade dos vinhos.
+Como objeto de estudo foi utilizado o dataset do vinho português "Vinho Verde":
+
+**Source:** Paulo Cortez, University of Minho, Guimarães, Portugal, <http://www3.dsi.uminho.pt/pcortez>
+A. Cerdeira, F. Almeida, T. Matos and J. Reis, Viticulture Commission of the Vinho Verde Region(CVRVV), Porto, Portugal
+@2009
+
+Espero que essa análise contribua para o desenvolvimento de novos estudantes da área de Machine Learning!
 
 Parte I - Análise Exploratória de dados
 =======================================

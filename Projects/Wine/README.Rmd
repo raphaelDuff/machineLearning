@@ -10,6 +10,16 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Introdução  
+Este trabalho foi realizado na matéria "Conceitos Estatísticos para IA" do curso de MBA em __Artificial Intelligence and Machine Learning__ da FIAP, tendo como objetivo a utilização de técnicas de estatística para exploração de dados e o uso de algoritmos para predição da qualidade dos vinhos.  
+Como objeto de estudo foi utilizado o dataset do vinho português "Vinho Verde":  
+  
+__Source:__
+Paulo Cortez, University of Minho, Guimarães, Portugal, http://www3.dsi.uminho.pt/pcortez  
+A. Cerdeira, F. Almeida, T. Matos and J. Reis, Viticulture Commission of the Vinho Verde Region(CVRVV), Porto, Portugal   
+@2009  
+  
+Espero que essa análise contribua para o desenvolvimento de novos estudantes da área de Machine Learning!  
 
 # Parte I - Análise Exploratória de dados
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
