@@ -1,9 +1,7 @@
 ---
 title: "Análise da qualidade de vinhos"
 subtitle: "FIAP 04-IA | Conceitos Estatístico para IA"
-author:
-- Alef Tenório; Alex Pereira; Guilherme A. Leite & Raphael Prates
-date: '`r Sys.Date()`'
+author: Alef Tenório; Alex Pereira; Guilherme A. Leite & Raphael Prates
 output:
   github_document:
     toc: true
@@ -134,7 +132,7 @@ mediana_diferenca <- data.frame(
 top_n(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)), dim(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)))[1])
 ```
 
-Vamos utilizar a análise gráfica para reforçar a visualização dos valores já obtidos na função _summary_ (a visualização gráfica por histogramas nos auxilia também na detecção de outliers):
+Vamos utilizar a análise gráfica para reforçar a visualização dos valores já obtidos na função _summary_ (a visualização gráfica por diagramas de caixa nos auxilia também na detecção de outliers):
   
 #### Diagrama de caixa de cada característica  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
@@ -274,6 +272,7 @@ g12 <- ggplot(wine_dset, aes(x=Vinho, y=quality, fill=Vinho)) +
 layout <- matrix(c(1,2,3,4,5,6,7,8,9,10,11,12),4,3,byrow=TRUE)
 multiplot(g1, g2, g3, g4, g5, g6, g7, g8, g9 ,g10, g11, g12, layout=layout)
 ``` 
+  
 Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos selecionar somente um tipo de vinho para a criação de um modelo preditivo coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que para os tintos (aprox. 3 vezes maior), utilizaremos os dados que oferecem mais amostras pra treinar e validar nosso modelo.  
   
 Antes de prosseguirmos para a parte de remoção de outliers e a regressão linear, a variável o *freesulfurdioxide* chamou a atenção desde o tópico "Descrição dos Dados" por sua descrição dar indícios que este valor está relacionado ao sabor e, consequentemente, a qualidade do vinho. Testando esta relação:  

@@ -1,7 +1,6 @@
 Análise da qualidade de vinhos
 ================
 Alef Tenório; Alex Pereira; Guilherme A. Leite & Raphael Prates
-2019-01-26
 
 -   [Parte I - Análise Exploratória de dados](#parte-i---análise-exploratória-de-dados)
     -   [Descrição das variáveis](#descrição-das-variáveis)
@@ -247,7 +246,7 @@ top_n(arrange(mediana_diferenca, desc(mediana_diferenca$Diferenca.Mediana)), dim
     ## 10          chlorides           0.03600
     ## 11            density           0.00301
 
-Vamos utilizar a análise gráfica para reforçar a visualização dos valores já obtidos na função *summary* (a visualização gráfica por histogramas nos auxilia também na detecção de outliers):
+Vamos utilizar a análise gráfica para reforçar a visualização dos valores já obtidos na função *summary* (a visualização gráfica por diagramas de caixa nos auxilia também na detecção de outliers):
 
 #### Diagrama de caixa de cada característica
 
@@ -389,7 +388,9 @@ layout <- matrix(c(1,2,3,4,5,6,7,8,9,10,11,12),4,3,byrow=TRUE)
 multiplot(g1, g2, g3, g4, g5, g6, g7, g8, g9 ,g10, g11, g12, layout=layout)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-8-1.png) Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos selecionar somente um tipo de vinho para a criação de um modelo preditivo coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que para os tintos (aprox. 3 vezes maior), utilizaremos os dados que oferecem mais amostras pra treinar e validar nosso modelo.
+![](README_files/figure-markdown_github/unnamed-chunk-8-1.png)
+
+Após a análise gráfica ficou ainda mais clara a diferença entre cada tipo de vinho (tinto ou branco), portanto, vamos selecionar somente um tipo de vinho para a criação de um modelo preditivo coerente. Além disso, como o número de dados pros vinhos brancos é bem maior do que para os tintos (aprox. 3 vezes maior), utilizaremos os dados que oferecem mais amostras pra treinar e validar nosso modelo.
 
 Antes de prosseguirmos para a parte de remoção de outliers e a regressão linear, a variável o *freesulfurdioxide* chamou a atenção desde o tópico "Descrição dos Dados" por sua descrição dar indícios que este valor está relacionado ao sabor e, consequentemente, a qualidade do vinho. Testando esta relação:
 
