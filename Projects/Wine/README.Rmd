@@ -2,19 +2,11 @@
 title: "Análise da qualidade de vinhos"
 subtitle: "FIAP 04-IA | Conceitos Estatístico para IA"
 author:
-- Alef Tenório
-- Alex Pereira
-- Guilherme A. Leite
-- Raphael Oliveira Prates
+- Alef Tenório; Alex Pereira; Guilherme A. Leite & Raphael Prates
 date: '`r Sys.Date()`'
 output:
-  html_document:
-    keep_md: true
-    fig_height: 6
-    fig_width: 10
-    number_sections: yes
-    toc: yes
-    code_folding: hide
+  github_document:
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
