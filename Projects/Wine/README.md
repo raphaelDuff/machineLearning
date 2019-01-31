@@ -112,11 +112,11 @@ wine_dset %>%
 ```
 
     ## # A tibble: 2 x 2
-    ## # Groups:   Vinho [2]
-    ##   Vinho     n
-    ##   <fct> <int>
-    ## 1 RED    1599
-    ## 2 WHITE  4898
+    ## # Groups: Vinho [2]
+    ##   Vinho      n
+    ##   <fctr> <int>
+    ## 1 RED     1599
+    ## 2 WHITE   4898
 
 A quantidade de dados para os vinhos brancos é aproximadamente 3 vezes maior que o vinho tinto.
 
@@ -800,7 +800,9 @@ modeloBackTree
 rpart.plot(modeloBackTree)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-20-1.png) Do *modeloBackTree* acima:
+![](README_files/figure-markdown_github/unnamed-chunk-20-1.png)
+
+Do *modeloBackTree* acima:
 
 **Variáveis dependentes:** quality
 **Variáveis independentes:** todas as outras
@@ -845,7 +847,9 @@ ptree <- prune(modeloBackTree, cp = modeloBackTree$cptable[which.min(modeloBackT
 rpart.plot(ptree)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-23-1.png) Usando as mesmas variáveis do modelo4:
+![](README_files/figure-markdown_github/unnamed-chunk-23-1.png)
+
+Usando as mesmas variáveis do modelo4:
 
 ``` r
 modeloBackTree4 <- rpart(quality ~volatileacidity+residualsugar+freesulfurdioxide+alcohol, data = trainData, cp = 0.01)
@@ -873,7 +877,9 @@ modeloBackTree4
 rpart.plot(modeloBackTree4)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-24-1.png) Do *modeloBackTree4* acima:
+![](README_files/figure-markdown_github/unnamed-chunk-24-1.png)
+
+Do *modeloBackTree4* acima:
 
 **Variáveis dependentes:** quality
 **Variáveis independentes:** volatileacidity+residualsugar+freesulfurdioxide+alcohol
@@ -1002,7 +1008,9 @@ rpart.plot(modelo_tree, type=4, extra=104, under=FALSE, clip.right.labs=TRUE,
            snip=FALSE)
 ```
 
-![](README_files/figure-markdown_github/unnamed-chunk-29-1.png) Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa árvore:
+![](README_files/figure-markdown_github/unnamed-chunk-29-1.png)
+
+Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa árvore:
 **Matriz de confusão:**
 
 ``` r

@@ -473,6 +473,7 @@ modeloBackTree <- rpart(quality ~., data = trainData)
 modeloBackTree
 rpart.plot(modeloBackTree)
 ```
+  
 Do *modeloBackTree* acima:  
   
 __Variáveis dependentes:__ quality  
@@ -491,12 +492,14 @@ modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"]
 ptree <- prune(modeloBackTree, cp = modeloBackTree$cptable[which.min(modeloBackTree$cptable[,"xerror"]),"CP"])
 rpart.plot(ptree)
 ```
+  
 Usando as mesmas variáveis do modelo4:  
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
 modeloBackTree4 <- rpart(quality ~volatileacidity+residualsugar+freesulfurdioxide+alcohol, data = trainData, cp = 0.01)
 modeloBackTree4
 rpart.plot(modeloBackTree4)
 ```
+  
 Do *modeloBackTree4* acima:  
   
 __Variáveis dependentes:__ quality  
@@ -570,6 +573,7 @@ rpart.plot(modelo_tree, type=4, extra=104, under=FALSE, clip.right.labs=TRUE,
            snip=FALSE)
 
 ```
+  
 Parece promissor, ela classificou a grande maioria dos vinhos como ruins, vamos ver a acurácia dessa árvore:  
 __Matriz de confusão:__
 ```{r echo=TRUE, warning=FALSE, message=FALSE}
