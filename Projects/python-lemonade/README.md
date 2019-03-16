@@ -50,7 +50,7 @@ import pandas as pd
 import seaborn as sns
 ```
 
-# 1) Leia o arquivo lemonades.csv usando pandas
+# 1) Leia o arquivo lemonades.csv usando pandas.
 
 
 ```python
@@ -149,7 +149,7 @@ df.head()
 
 
 
-# 2) Retorne as informações sobre as colunas e as principais estatísticas sobre o dataset
+# 2) Retorne as informações sobre as colunas e as principais estatísticas sobre o dataset.
 
 
 ```python
@@ -274,7 +274,7 @@ df.describe()
 
 
 
-# 3) Realize a limpeza do dataset
+# 3) Realize a limpeza do dataset.
 
 
 ```python
@@ -725,21 +725,21 @@ df.info()
     memory usage: 1.9+ KB
     
 
-# 4) Adicione uma coluna chamada "Sales" que contém o total de vendas de limão e laranja
+# 4) Adicione uma coluna chamada "Sales" que contém o total de vendas de limão e laranja.
 
 
 ```python
 df['Sales'] = df['Lemon'] + df['Orange']
 ```
 
-# 5) Adicione uma coluna chamada "Revenue" que calcula o lucro (venda*preço)
+# 5) Adicione uma coluna chamada "Revenue" que calcula o lucro (venda*preço).
 
 
 ```python
 df['Revenue'] = df['Sales'] * df['Price']
 ```
 
-# 6) Retorne o lucro total
+# 6) Retorne o lucro total.
 
 
 ```python
@@ -749,7 +749,7 @@ print("Lucro total = $%.2f" % df['Revenue'].sum())
     Lucro total = $2138.00
     
 
-# 7) Escreva uma função que receba dois parâmetros, dataset e temp(int). Se temp for 1, ele retorna a máxima temperatura observada no conjunto de dados; se 0, retorna a média do período observado; se -1, retorna a temperatura mínima
+# 7) Escreva uma função que receba dois parâmetros, dataset e temp(int). Se temp for 1, ele retorna a máxima temperatura observada no conjunto de dados; se 0, retorna a média do período observado; se -1, retorna a temperatura mínima.
 
 
 ```python
@@ -784,7 +784,7 @@ print('Temperatura mínima: %.1f' % temp_analise(df,-1))
     Temperatura mínima: 70.0
     
 
-# 8) Escreva uma função que receba dois parametros (dataset, localização) e retorne o dataset com o preço do limão e laranja ajustados em 15% se a localização for 'Park' ou ajustados em 10% se a localização for 'Beach'
+# 8) Escreva uma função que receba dois parametros (dataset, localização) e retorne o dataset com o preço do limão e laranja ajustados em 15% se a localização for 'Park' ou ajustados em 10% se a localização for 'Beach'.
 
 
 ```python
@@ -1013,7 +1013,7 @@ DataFrame.head(loc_reajpreco(df, 'Beach'))
 
 
 
-# 9) Escreva uma função que receba o dataset como parâmetro e retorne o dataset com uma coluna a mais que mostre o rank de temperatura. O dataset retornado precisa estar ordenado de acordo com rank
+# 9) Escreva uma função que receba o dataset como parâmetro e retorne o dataset com uma coluna a mais que mostre o rank de temperatura. O dataset retornado precisa estar ordenado de acordo com rank.
 
 
 ```python
@@ -1139,7 +1139,7 @@ DataFrame.head(temp_rank(df))
 
 
 
-# 10) Imprima um gráfico de linha que retorne o lucro ao longo do tempo
+# 10) Imprima um gráfico de linha que retorne o lucro ao longo do tempo.
 
 
 ```python
@@ -1302,7 +1302,7 @@ plt.title('Revenue Histogram');
 ![png](output_49_0.png)
 
 
-# 13) crie um gráfico de linha que compute o lucro por tipo de fruta ao longo do tempo
+# 13) Crie um gráfico de linha que compute o lucro por tipo de fruta ao longo do tempo.
 
 
 ```python
@@ -1319,7 +1319,7 @@ plt.title('Revenue for July 2016');
 ![png](output_51_0.png)
 
 
-# 14) usando regressão linear, prediga vendas a partir de Temperature, Leaflets e Price
+# 14) Usando regressão linear, prediga vendas a partir de Temperature, Leaflets e Price.
 
 
 ```python
@@ -1342,8 +1342,8 @@ print ('Coefficients: ', regr_temp.coef_)
 print ('Intercept: ',regr_temp.intercept_)
 ```
 
-    Coefficients:  [[6.96718051]]
-    Intercept:  [-348.15862755]
+    Coefficients:  [[4.27746889]]
+    Intercept:  [-140.51416468]
     
 
 
@@ -1373,8 +1373,8 @@ print ('Coefficients: ', regr_leaflets.coef_)
 print ('Intercept: ',regr_leaflets.intercept_)
 ```
 
-    Coefficients:  [[2.28357627]]
-    Intercept:  [-53.8973575]
+    Coefficients:  [[1.88806579]]
+    Intercept:  [-7.03116262]
     
 
 
@@ -1404,8 +1404,8 @@ print ('Coefficients: ', regr_price.coef_)
 print ('Intercept: ',regr_price.intercept_)
 ```
 
-    Coefficients:  [[-155.88832487]]
-    Intercept:  [259.11738579]
+    Coefficients:  [[-119.76422764]]
+    Intercept:  [240.17886179]
     
 
 
@@ -1436,8 +1436,8 @@ print ('Coefficients: ', regr_mult.coef_)
 print ('Intercept: ',regr_mult.intercept_)
 ```
 
-    Coefficients:  [[   3.0800304     1.95885809 -102.75702476]]
-    Intercept:  [-223.03188393]
+    Coefficients:  [[   1.83124231    1.82496033 -131.41281329]]
+    Intercept:  [-99.59795172]
     
 
 
@@ -1453,11 +1453,6 @@ print("Residual sum of squares: %.2f"
 print('Variance score: %.2f' % regr_mult.score(x, y))
 ```
 
-    Residual sum of squares: 581.79
-    Variance score: -0.04
+    Residual sum of squares: 473.39
+    Variance score: 0.85
     
-
-
-```python
-
-```
