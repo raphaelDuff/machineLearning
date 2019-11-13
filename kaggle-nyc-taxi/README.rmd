@@ -1,0 +1,616 @@
+---
+title: "Portfolio: Learning AI with R"
+author: "Raphael Prates"
+date: '`r Sys.Date()`'
+output: 
+  github_document:
+    html_preview: false
+    fig_width: 10
+    fig_height: 6
+    toc: true
+---
+
+# Kaggle's Kernels Analysis  
+  
+This project is from the [FIAP](https://www.fiap.com.br/) __MBA in Artificial Intelligence__ course.  
+  
+The main purpose of this project is to learn R and Machine Learning taking a good Kernel by reference.  
+So we reproduced, compared e studied the following EDA (check the result in the _Rmd_ file):  
+
+* __NYC Taxi EDA - Update: The fast & the curious__  
+"This is a comprehensive Exploratory Data Analysis for the [New York City Taxi Trip Duration](https://www.kaggle.com/c/nyc-taxi-trip-duration) competition with __tidy R__ and __ggplot2__.  
+The goal of this playground challenge is to predict the duration of taxi rides in NYC based on features like trip coordinates or pickup date and time. The data comes in the shape of 1.5 million training observations (../input/train.csv) and 630k test observation (../input/test.csv). Each row contains one taxi trip.  
+In this notebook, we will first study and visualise the original data, engineer new features, and examine potential outliers.
+
+# Introduction  
+  
+__Intelligence definition__  
+"The capacity of a system adapt itself with insufficient resources and knowledge" - Pei Waing.  
+
+__Why R to study AI?__  
+"R is one of the major languages for data science. It provides excellent visualisation features, which is essential to explore the data before submitting it to any automated learning, as well as assessing the results of the learning algorithm. Many R package for machine learning are available of the shelf and many modern methods in statistical learning are implemented in R as part of their development."  
+From: https://lgatto.github.io/IntroMachineLearningWithR/an-introduction-to-machine-learning-with-r.html#why-r  
+  
+  
+# Reading files & Regular Expressions  
+Regular expressions (regex) is a powerful ally when we'd like to clean/search for informations. 
+So let's take a breef overview in this subject because everyone will use it some time:
+  
+## Library _stringr_
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library('stringr') # string manipulation
+```
+  
+From https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html:
+
+There are four main families of functions in stringr:  
+
+* Character manipulation: these functions allow you to manipulate individual characters within the strings in character vectors;
+* Whitespace tools to add, remove and manipulate whitespace;
+* Locale sensitive operations whose operations will vary from locale to locale;
+* Pattern matching functions. These recognise four engines of pattern description. The most common is regular expressions, but there are others tools.  
+  
+## Testing Regex Website  
+I'd like to recommend these two websites to construct and test the regex: 
+  
+Regex info: https://docs.python.org/3/library/re.html  
+Test Online Regex: https://regex101.com/  
+  
+For R, you can choose Flavor= Python (python and R regex are very similar because both regex structure come from pearl).  
+
+## Example: readlines and regex  
+  
+### Reading txt files  
+Here we are going to read a txt file and then extract some informations about from the document:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+file <- readLines("Ficha_Aluno.txt")
+
+# Printing the file line by line
+file
+```
+### Searching for expression  
+Here we are looking for two informations class name (Turma) and student's name (Nome):
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+file <- readLines("Ficha_Aluno.txt")
+
+# Finding the line that cointains Turma:
+line_turma <- grep("Turma", file, value = TRUE)
+
+# Extracting only the value
+class <- str_extract(line_turma,'FIAP-[0]*[0-9][iI][aA]')
+
+# Finding the line that cointains Nome:
+line_nome <- grep("Nome", file, value = TRUE)
+
+# Extracting only the value
+name <- unlist(str_split(line_nome,pattern = ': '))[2]
+
+# Printing the results
+
+paste("I am", name,"from", class,". I'm studying Machine Learning in a MBA Course and I hope that you enjoy this portfolio!")
+```
+
+# Kernel Analysis - "NYC Taxi: Fast & Curious"  
+```{r, echo=FALSE,out.width='100%', fig.align='center'}
+knitr::include_graphics('images/New-York-Taxi.jpg')
+```
+  
+__Kernel name:__ "NYC Taxi EDA - Update: The fast & the curious"  
+__Link:__ https://www.kaggle.com/headsortails/nyc-taxi-eda-update-the-fast-the-curious
+
+## Introduction
+Most of this work is a raw reproduction of the original one. The purpose of this reproduction is to test and learn the commands/steps used by the author to construct a good __Exploratory Data Analysis__. In the end, a topic about Kmeans was added complementing the original work.  
+When its possible we explored the reasons why the author choose the functions used and compared to others alternatives.  
+  
+### Libraries  
+```{r libraries, echo=TRUE, message=FALSE, warning=FALSE}
+library('ggplot2') # visualisation
+library('scales') # visualisation
+library('grid') # visualisation
+library('RColorBrewer') # visualisation
+library('corrplot') # visualisation
+library('alluvial') # visualisation
+library('dplyr') # data manipulation
+library('readr') # input/output
+library('data.table') # data manipulation
+library('tibble') # data wrangling
+library('tidyr') # data wrangling
+library('stringr') # string manipulation
+library('forcats') # factor manipulation
+library('lubridate') # date and time
+library('geosphere') # geospatial locations
+library('leaflet') # maps
+library('leaflet.extras') # maps
+library('maps') # maps
+library('xgboost') # modelling
+library('caret') # modelling
+library('profvis') # code execution time anaylsis
+library('webshot')
+```
+### Load data
+  
+#### Original code
+```{r load_data_original, echo=TRUE, message=FALSE, warning=FALSE}
+library("data.table")
+library("tibble")
+
+train <- as_tibble(fread('train.csv'))
+```
+
+#### __Comparison with others alternatives__  
+In R, __read.csv__ is part of the regular functions and is used for load data.frame from a _csv_ file. But when we're dealing with a huge data.frame this function can take a long time to run. 
+```{r l, echo=TRUE, message=FALSE, warning=FALSE}
+print(paste("In this case the dataset is quite huge:",dim(train)[1], "rows and",
+            dim(train)[2], "columns."))
+```
+So in this part the author used a function called __fread__ that performs much faster than _read.csv_ (check the time of each function using profvis!!).  
+After that other function should be compared: __load__.
+This function is used to load variables that have been stored in a _.RData_ file and runs very fast comparing with _read.csv_ and _fread_.  
+When is a good ideia to use _load_?
+When it's possible to use a background process to update the data.frame and save it in _.RData_ file.  
+Let's take a look at the three possibilities:
+```{r load_data_comparison, echo=TRUE, message=FALSE, warning=FALSE}
+library("profvis")
+library("data.table")
+library("tibble")
+library("readr")
+
+profvis({
+  # fread
+  train <- as_tibble(fread("train.csv"))
+  test <- as_tibble(fread("test.csv"))
+  
+  # read.csv
+  train_readcsv <- read.csv("train.csv")
+  
+  # read_csv -> from "readr" package
+  train_read_csv <- read_csv("train.csv")
+  
+  # loading RData
+  save(train_readcsv, file = "train_data.RData")
+  rm(train_readcsv)
+  load(file = "train_data.RData")
+})
+```
+  
+#### __Tibbles vs data frames__
+All the information bellow was "greped" from https://cran.r-project.org/web/packages/tibble/vignettes/tibble.html  
+__Tibbles__  
+"Tibbles are a modern take on data frames. They keep the features that have stood the test of time, and drop the features that used to be convenient but are now frustrating (i.e. converting character vectors to factors)."  
+  
+Major points:  
+
+* It never changes an input's type (i.e., no more stringsAsFactors = FALSE!);
+* It never adjusts the names of variables (i.e names with spaces will keep the whitespace. Data.frame   replaces whitespace for '.');
+* When you print a tibble, it only shows the first ten rows and all the columns that fit on one screen;
+* Tibbles are quite strict about subsetting. __[ ]__ always returns another tibble. Contrast this with a data frame: sometimes __[ ]__ returns a data frame and sometimes it just returns a vector.
+  
+### File structure and content  
+```{r, echo=FALSE,out.width='25%', fig.align='center'}
+knitr::include_graphics('images/sheldon.gif')
+```
+A brief overview of our data can summaries the descriptive statistics values of the dataset and detect abnormal items or outliers.
+
+__For the summaries__
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+summary(train)
+summary(test)
+```
+__Data overview__
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library("dplyr")
+glimpse(train)
+glimpse(test)
+```
+  
+#### Comparison with others alternatives
+Another popular way to make a data overview is using _str_. It is very similar to _glimpse_ but _str_ shows less data. 
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+str(train)
+```
+  
+#### First observations
+
+* vendor_id only takes the values 1 or 2, presumably to differentiate two taxi companies  
+We can easily check this doing:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+levels(as.factor(train$vendor_id))
+```
+* pickup_datetime and (in the training set) dropoff_datetime are combinations of date and time that we will have to re-format into a more useful shape  
+* passenger_count takes a median of 1 and a maximum of 9 in both data sets  
+* The pickup/dropoff_longitute/latitute describes the geographical coordinates where the meter was activate/deactivated  
+* store_and_fwd_flag is a flag that indicates whether the trip data was sent immediately to the vendor ("N") or held in the memory of the taxi because there was no connection to the server ("Y"). Maybe there could be a correlation with certain geographical areas with bad reception?  
+* trip_duration: our target feature in the training data is measured in seconds.  
+  
+### Missing values  
+To avoid an inappropriate analysis of the data, the missing values should be analysed to measure their impact in the whole dataset.  
+If the number of cases is __less than 5%__ of the sample, then the researcher __can drop them.__  
+For more info about this subject: https://www.statisticssolutions.com/missing-values-in-data/  
+Luckly there is no missing values in data (easy mode):  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+sum(is.na(train))
+sum(is.na(test))
+```
+  
+### Combining train and test  
+Here the author did an interesting move: he combined _train_ and _test_ data sets into a single one in order to avoid a closely approach that matches just one part of data.  
+__CAUTION:__ we can only combine the two data sets for a better overview but for the creation of a machine learning model we should keep _train_ and _test_ separate.  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Mutate creates dset, dropff_datetime and trip_duration columns for test dataset
+# For train dataset only dset is created by mutate
+# bind_rows combines the data sets into one
+combine <- bind_rows(train %>% mutate(dset = "train"), 
+                     test %>% mutate(dset = "test",
+                                     dropoff_datetime = NA,
+                                     trip_duration = NA))
+combine <- combine %>% mutate(dset = factor(dset))
+glimpse(combine)
+```
+  
+### Reformating features
+For our following analysis, we will turn the data and time from characters into date objects. We also recode vendor_id as a factor. This makes it easier to visualise relationships that involve these features.  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library('lubridate')
+train <- train %>%
+  mutate(pickup_datetime = ymd_hms(pickup_datetime),
+         dropoff_datetime = ymd_hms(dropoff_datetime),
+         vendor_id = factor(vendor_id),
+         passenger_count = factor(passenger_count))
+```
+  
+### Consistency check  
+__ASSUME NOTHING!__ It is worth checking whether the trip_durations are consistent with the intervals between the pickup_datetime and dropoff_datetime. Presumably the former were directly computed from the latter, but you never know. Below, the check variable shows "TRUE" if the two intervals are not consistent:   
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  mutate(check = abs(int_length(interval(dropoff_datetime,pickup_datetime)) + trip_duration) > 0) %>%
+  select(check, pickup_datetime, dropoff_datetime, trip_duration) %>%
+  group_by(check) %>%
+  count()
+```
+  
+And we find that everything fits perfectly.  
+  
+  
+## Individual feature visualizations  
+"Visualizations of feature distributions and their relations are key to understanding a data set, and they often open up new lines of inquiry. I always recommend to examine the data from as many different perspectives as possible to notice even subtle trends and correlations."  
+
+  
+### Trip Duration
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+train %>%
+  ggplot(aes(trip_duration)) +
+  geom_histogram(fill = "red", bins = 150) +
+  scale_x_log10() +
+  scale_y_sqrt() +
+  labs(title = "New York Taxi - EDA", x = "Trip Duration (s)", y = "Number of Events")
+```
+  
+We find:  
+
+* the majority of rides follow a rather smooth distribution that looks almost log-normal with a peak just short of 1000 seconds, i.e. about 17 minutes.
+* There are several suspiciously short rides with less than 10 seconds duration.
+* Additionally, there is a strange delta-shaped peak of trip_duration just before the 1e5 seconds mark and even a few way above it:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  arrange(desc(trip_duration)) %>%
+  select(trip_duration, pickup_datetime, dropoff_datetime, everything()) %>%
+  head(10)
+```
+Those records would correspond to 24-hour trips and beyond, with a maximum of almost 12 days. I know that rush hour can be bad, but those values are a little unbelievable.  
+  
+### Pickup and dropoff datetime
+Over the year, the distributions of pickup_datetime and dropoff_datetime look like this: 
+mark and even a few way above it:  
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  ggplot(aes(pickup_datetime)) +
+  geom_histogram(fill = "red", bins = 120) +
+  labs(x = "Pickup dates")
+
+p2 <- train %>%
+  ggplot(aes(dropoff_datetime)) +
+  geom_histogram(fill = "blue", bins = 120) +
+  labs(x = "Dropoff dates")
+
+layout <- matrix(c(1,2),2,1,byrow=FALSE)
+multiplot(p1, p2, layout=layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1;p2 <- 1
+```
+Fairly homogeneous, covering half a year between January and July 2016. There is an interesting drop around late January early February:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  filter(pickup_datetime > ymd("2016-01-20") & pickup_datetime < ymd("2016-02-10")) %>%
+  ggplot(aes(pickup_datetime)) +
+  geom_histogram(fill = "red", bins = 120)
+
+```
+  
+#### Raised questions from pickup_datetime data visualization  
+
+  __That's winter in NYC, so maybe snow storms or other heavy weather? Events like this should be taken into account, maybe through some handy external data set?__  
+  
+### _Passager count, vendor_id, store_and_fwd_flag, Day of the week and Hour of the Day_  
+In the plot above we can already see some daily and weekly modulations in the number of trips. Let's investigate these variations together with the distributions of passenger_count and vendor_id by creating a multi-plot panel with different components:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  group_by(passenger_count) %>%
+  count() %>%
+  ggplot(aes(passenger_count, n, fill = passenger_count)) +
+  geom_col() +
+  scale_y_sqrt() +
+  theme(legend.position = "none")
+
+p2 <- train %>%
+  ggplot(aes(vendor_id, fill = vendor_id)) +
+  geom_bar() +
+  theme(legend.position = "none")
+
+p3 <- train %>%
+  ggplot(aes(store_and_fwd_flag)) +
+  geom_bar() +
+  theme(legend.position = "none") +
+  scale_y_log10()
+
+p4 <- train %>%
+  mutate(wday = wday(pickup_datetime, label = TRUE)) %>%
+  group_by(wday, vendor_id) %>%
+  count() %>%
+  ggplot(aes(wday, n, colour = vendor_id)) +
+  geom_point(size = 4) +
+  labs(x = "Day of the week", y = "Total number of pickups") +
+  theme(legend.position = "none")
+
+p5 <- train %>%
+  mutate(hpick = hour(pickup_datetime)) %>%
+  group_by(hpick, vendor_id) %>%
+  count() %>%
+  ggplot(aes(hpick, n, color = vendor_id)) +
+  geom_point(size = 4) +
+  labs(x = "Hour of the day", y = "Total number of pickups") +
+  theme(legend.position = "none")
+
+layout <- matrix(c(1,2,3,4,5,5),3,2,byrow=TRUE)
+multiplot(p1, p2, p3, p4, p5, layout=layout)
+
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1; p2 <- 1; p3 <- 1; p4 <- 1; p5 <- 1
+```
+We find:  
+
+* There are a few trips with zero, or seven to nine passengers but they are a rare exception:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  group_by(passenger_count) %>%
+  count()
+```
+* The vast majority of rides had only a single passenger, with two passengers being the (distant) second most popular option.  
+* Towards larger passenger numbers we are seeing a smooth decline through 3 to 4, until the larger crowds (and larger cars) give us another peak at 5 to 6 passengers.  
+* Vendor 2 has significantly more trips in this data set than vendor 1 (note the logarithmic y-axis). This is true for every day of the week.  
+* We find an interesting pattern with Monday being the quietest day and Friday very busy. This is the same for the two different vendors, with vendor_id == 2 showing significantly higher trip numbers.  
+* As one would intuitively expect, there is a strong dip during the early morning hours. There we also see not much difference between the two vendors. We find another dip around 4pm and then the numbers increase towards the evening.  
+* The store_and_fwd_flag values, indicating whether the trip data was sent immediately to the vendor ("N") or held in the memory of the taxi because there was no connection to the server ("Y"), show that there was almost no storing taking place (note again the logarithmic y-axis):  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  group_by(store_and_fwd_flag) %>%
+  count()
+y_count <- table(train$store_and_fwd_flag)['Y']/sum(table(train$store_and_fwd_flag))
+paste0('Trip data stored in memory due to no connection represents ',round(y_count*100, digits = 2),'% of the values.')
+```
+  
+### Time series graphics  
+The trip volume per hour of the day depends somewhat on the month and strongly on the day of the week:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  mutate(hpick = hour(pickup_datetime),
+         Month = factor(month(pickup_datetime, label = TRUE))) %>%
+  group_by(hpick, Month) %>%
+  count() %>%
+  ggplot(aes(hpick, n, color = Month)) +
+  geom_line(size = 1.5) +
+  labs(x = "Hour of the day", y = "count")
+
+p2 <- train %>%
+  mutate(hpick = hour(pickup_datetime),
+         wday = factor(wday(pickup_datetime, label = TRUE))) %>%
+  group_by(hpick, wday) %>%
+  count() %>%
+  ggplot(aes(hpick, n, color = wday)) +
+  geom_line(size = 1.5) +
+  labs(x = "Hour of the day", y = "count")
+
+layout <- matrix(c(1,2),2,1,byrow=FALSE)
+multiplot(p1, p2, layout=layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1;p2 <- 1
+```
+We find:  
+
+* January and June have fewer trips, whereas March and April are busier months. This tendency is observed for both vendor_ids.  
+* The weekend (Sat and Sun, plus Fri to an extend) have higher trip numbers during the early morning ours but lower ones in the morning between 5 and 10, which can most likely be attributed to the contrast between NYC business days and weekend night life. In addition, trip numbers drop on a Sunday evening/night.  
+Finally, we will look at a simple overview visualization of the pickup/dropoff latitudes and longitudes:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  filter(pickup_longitude > -74.05 & pickup_longitude < -73.7) %>%
+  ggplot(aes(pickup_longitude)) +
+  geom_histogram(fill = "red", bins = 40)
+
+p2 <- train %>%
+  filter(dropoff_longitude > -74.05 & dropoff_longitude < -73.7) %>%
+  ggplot(aes(dropoff_longitude)) +
+  geom_histogram(fill = "blue", bins = 40)
+
+p3 <- train %>%
+  filter(pickup_latitude > 40.6 & pickup_latitude < 40.9) %>%
+  ggplot(aes(pickup_latitude)) +
+  geom_histogram(fill = "red", bins = 40)
+
+p4 <- train %>%
+  filter(dropoff_latitude > 40.6 & dropoff_latitude < 40.9) %>%
+  ggplot(aes(dropoff_latitude)) +
+  geom_histogram(fill = "blue", bins = 40)
+
+layout <- matrix(c(1,2,3,4),2,2,byrow=FALSE)
+multiplot(p1, p2, p3, p4, layout=layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1; p2 <- 1; p3 <- 1; p4 <- 1
+```
+Here we had constrain the range of latitude and longitude values, because there are a few cases which are way outside the NYC boundaries. The resulting distributions are consistent with the focus on Manhattan that we had already seen on the map. These are the most extreme values from the pickup_latitude feature:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  arrange(pickup_latitude) %>%
+  select(pickup_latitude, pickup_longitude) %>%
+  head(5)
+```
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  arrange(desc(pickup_latitude)) %>%
+  select(pickup_latitude, pickup_longitude) %>%
+  head(5)
+```
+We need to keep the existence of these (rather astonishing) values in mind so that they don't bias our analysis.
+  
+### Most common latitudes and longitudes for dropoff/pickup  
+__Pickup point__
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  select(pickup_longitude, pickup_latitude) %>%
+  group_by(pickup_longitude, pickup_latitude) %>%
+  count(sort = TRUE) %>%
+  summary()
+```
+__Dropoff point__
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>%
+  select(dropoff_longitude, dropoff_latitude) %>%
+  group_by(dropoff_longitude, dropoff_latitude) %>%
+  count(sort = TRUE) %>%
+  summary()
+```
+  
+  
+## Feature relations
+Now it's time to examine how those features are related to each other and to our target _trip duration_.
+  
+### Pickup date/time vs _trip_duration_
+  
+* How does the variation in trip numbers throughout the day and the week affect the average trip duration?  
+* Do quieter days and hours lead to faster trips?  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+p1 <- train %>%
+  mutate(day_week = wday(pickup_datetime, label = TRUE)) %>%
+  group_by(day_week, vendor_id) %>% 
+  summarise(trip_duration_mean = median(trip_duration)/60) %>% 
+  ggplot(aes(day_week, trip_duration_mean, color = vendor_id)) +
+  geom_point(size = 4) +
+  labs(x = "Day of the week",y = "Median trip duration [min]")
+
+p2 <- train %>%
+  mutate(hour_day = hour(pickup_datetime)) %>% 
+  group_by(hour_day, vendor_id) %>% 
+  summarise(trip_duration_mean = median(trip_duration)/60) %>% 
+  ggplot(aes(hour_day, trip_duration_mean, color = vendor_id)) +
+  geom_smooth(method = "loess", span = 1/2) +
+  geom_point(size = 4) +
+  labs(x = "Hour of the day",y = "Median trip duration [min]") +
+  theme(legend.position = "none")
+
+layout <- matrix(c(1,2), 2,1, byrow = FALSE)
+multiplot(p1,p2, layout = layout)
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+p1 <- 1; p2 <- 1
+```
+  
+We find:  
+
+* There is indeed a similar pattern as for the business of the day of the week. Vendor 2, the one with the more frequent trips, also has consistently higher trip durations than vendor 1. __It will be worth adding the vendor_id feature to a model to test its predictive importance.__  
+* Over the course of a typical day we find a peak in the early afternoon and dips around 5-6am and 8pm. __The weekday and hour of a trip appear to be important features for predicting its duration and should be included in a successful model.__  
+  
+### Passenger count and Vendor vs _trip_duration_
+  
+__Are different numbers of passengers and/or the different vendors correlated with the duration of the trip?__  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  ggplot(aes(passenger_count, trip_duration, color = passenger_count)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  theme(legend.position = "none") +
+  facet_wrap(~vendor_id) +
+  labs(y = "Trip duration [s]", x = "Number of passengers")
+```
+  
+We find:  
+
+* Both vendors have short trips without any passagengers;  
+* Vendor 1 has all of the trips beyond 24 hours, whereas vendor 2 has all of the (five) trips with more than six passengers and many more trips that approach the 24-hour limit.  
+* Between 1 and 6 passengers the median trip durations are remarkably similar, in particular for vendor 2. There might be differences for vendor 1, but they are small (note the logarthmic y-axis):  
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  ggplot(aes(trip_duration, fill = vendor_id)) +
+  geom_density(position = "stack") +
+  scale_x_log10()
+```
+  
+Comparing the densities of the _trip_duration_ distribution for the two vendors we find the medians are very similar, whereas the means are likely skewed by vendor 2 containing most of the long-duration outliers:  
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+train %>% 
+  group_by(vendor_id) %>% 
+  summarise(mean_duration = mean(trip_duration),
+            median_duration = median(trip_duration))
+```
+  
